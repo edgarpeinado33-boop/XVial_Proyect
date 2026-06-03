@@ -7,11 +7,9 @@
 <meta name="theme-color" content="#0d1117">
 <title>XVial – Predicción de Pavimento</title>
 
-<!-- ISO 25010: Portabilidad / Usabilidad – Google Fonts para tipografía clara -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-<!-- Plotly para gráficos 3D interactivos -->
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 
 <style>
@@ -24,7 +22,7 @@
   --card:     #161b22;
   --border:   #30363d;
   --text:     #e6edf3;
-  --muted:    #8b949e;
+  --muted:    --muted;
   --accent:   #58a6ff;
   --green:    #3fb950;
   --red:      #f85149;
@@ -96,7 +94,7 @@ header {
 }
 .logo-sub {
   font-size: clamp(.6rem, 1.5vw, .78rem);
-  color: var(--muted);
+  color: #8b949e;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -129,7 +127,7 @@ header {
 }
 .kpi-chip .lbl {
   font-size: .6rem;
-  color: var(--muted);
+  color: #8b949e;
   text-align: center;
   line-height: 1.2;
 }
@@ -168,7 +166,7 @@ header {
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
-  color: var(--muted);
+  color: #8b949e;
   font-family: var(--font-sans);
   font-size: clamp(.62rem, 1.5vw, .75rem);
   font-weight: 600;
@@ -259,12 +257,12 @@ header {
 }
 .pred-conf {
   font-size: clamp(.8rem, 2vw, 1rem);
-  color: var(--muted);
+  color: #8b949e;
 }
 .pred-esal {
   font-family: var(--font-mono);
   font-size: clamp(.65rem, 1.5vw, .78rem);
-  color: var(--muted);
+  color: #8b949e;
   border-top: 1px solid var(--border);
   padding-top: .4rem;
   width: 100%;
@@ -317,7 +315,7 @@ nav {
 #pos-indicator {
   font-family: var(--font-mono);
   font-size: clamp(.58rem, 1.4vw, .72rem);
-  color: var(--muted);
+  color: #8b949e;
   text-align: center;
   flex: 1;
 }
@@ -349,7 +347,7 @@ nav {
 .iso-table { width: 100%; border-collapse: collapse; font-size: .72rem; }
 .iso-table th {
   text-align: left;
-  color: var(--muted);
+  color: #8b949e;
   font-weight: 600;
   padding: .3rem .5rem;
   border-bottom: 1px solid var(--border);
@@ -413,7 +411,6 @@ nav {
 
 <div id="app">
 
-  <!-- ══ HEADER ══════════════════════════════════════════════════ -->
   <header role="banner">
     <div class="logo">
       <span class="logo-name">XVial</span>
@@ -427,74 +424,60 @@ nav {
     <span class="iso-badge" title="ISO/IEC 25010 + 25020 Compliant">ISO 25010 · 25020</span>
   </header>
 
-  <!-- ══ TABS ════════════════════════════════════════════════════ -->
   <div id="tabs-bar" role="tablist" aria-label="Navegación de gráficas"></div>
 
-  <!-- ══ CHART AREA ══════════════════════════════════════════════ -->
   <main id="chart-area" role="main" aria-live="polite">
 
-    <!-- Panel 0: Aforo 3D -->
     <section class="chart-panel" id="panel-0" role="tabpanel">
       <div class="chart-title">📊 Aforo Real — Av. Blanco Galindo (barras 3D)</div>
       <div class="plotly-container" id="plot-aforo"></div>
     </section>
 
-    <!-- Panel 1: Composición 3D -->
     <section class="chart-panel" id="panel-1" role="tabpanel">
       <div class="chart-title">🥧 Composición Vehicular (%) — gráfico 3D de dona</div>
       <div class="plotly-container" id="plot-comp"></div>
     </section>
 
-    <!-- Panel 2: Importancia de Variables 3D -->
     <section class="chart-panel" id="panel-2" role="tabpanel">
       <div class="chart-title">🧠 Importancia de Variables — Random Forest 3D</div>
       <div class="plotly-container" id="plot-import"></div>
     </section>
 
-    <!-- Panel 3: Matriz de Confusión 3D -->
     <section class="chart-panel" id="panel-3" role="tabpanel">
       <div class="chart-title">🔢 Matriz de Confusión — superficie 3D</div>
       <div class="plotly-container" id="plot-matrix"></div>
     </section>
 
-    <!-- Panel 4: Predicción Principal -->
     <div id="panel-prediccion" role="tabpanel">
       <div class="pred-main-card" id="pred-card">
         <div style="font-size:clamp(2rem,6vw,3.5rem)" id="pred-emoji">✅</div>
         <div class="pred-verdict" id="pred-verdict">SIN REPARACIÓN</div>
         <div class="pred-conf" id="pred-conf">Confianza: —%</div>
-        <div style="font-size:clamp(.62rem,1.5vw,.76rem);color:var(--muted)">Av. Blanco Galindo · Cochabamba</div>
+        <div style="font-size:clamp(.62rem,1.5vw,.76rem);color:#8b949e">Av. Blanco Galindo · Cochabamba</div>
         <div class="pred-esal" id="pred-esal">ESAL total (30 min): —</div>
       </div>
       <div class="pred-gauge-wrap" id="plot-gauge"></div>
     </div>
 
-    <!-- Panel 5: Probabilidades 3D -->
     <section class="chart-panel" id="panel-5" role="tabpanel">
       <div class="chart-title">📉 Distribución de Probabilidades 3D</div>
       <div class="plotly-container" id="plot-prob"></div>
     </section>
 
-    <!-- Panel 6: Antigüedad vs Carga 3D -->
     <section class="chart-panel" id="panel-6" role="tabpanel">
       <div class="chart-title">📐 Antigüedad vs Carga de Tráfico — scatter 3D</div>
       <div class="plotly-container" id="plot-scatter"></div>
     </section>
 
-    <!-- Panel 7: Proyección Horaria 3D -->
     <section class="chart-panel" id="panel-7" role="tabpanel">
       <div class="chart-title">⏱️ Proyección Horaria del Flujo — superficie 3D</div>
       <div class="plotly-container" id="plot-hora"></div>
     </section>
 
-    <!-- Panel 8: ISO Compliance -->
-    <div id="iso-panel" role="tabpanel">
-      <!-- contenido generado por JS -->
-    </div>
+    <div id="iso-panel" role="tabpanel"></div>
 
   </main>
 
-  <!-- ══ NAV BAR ═════════════════════════════════════════════════ -->
   <nav role="navigation" aria-label="Navegación de gráficas">
     <button class="nav-btn" id="btn-prev" aria-label="Gráfica anterior">◀ Anterior</button>
     <span id="pos-indicator">—</span>
@@ -505,50 +488,24 @@ nav {
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════════
-   XVial – Aplicación Web Responsiva
-   ───────────────────────────────────────────────────────────────────
-   ISO/IEC 25010 (Calidad del producto de software):
-     ✔ Funcionalidad adecuada – todas las 8 gráficas del sistema original
-     ✔ Fiabilidad – manejo de errores en renderizado
-     ✔ Usabilidad – WCAG AA, navegación por teclado, ARIA roles
-     ✔ Eficiencia de desempeño – renderizado diferido (lazy render)
-     ✔ Mantenibilidad – arquitectura MVC, módulos separados, const naming
-     ✔ Portabilidad – responsive mobile/tablet/desktop, viewport meta
-     ✔ Seguridad – sin eval(), sin innerHTML con datos externos
-     ✔ Compatibilidad – Plotly CDN estable, sin dependencias propietarias
-
-   ISO/IEC 25020 (Medición de calidad):
-     ✔ Métricas de calidad expuestas en panel ISO (pestaña 9)
-     ✔ Indicadores cuantificables: confianza del modelo, ESAL, aforo
-     ✔ Trazabilidad: cada gráfica documenta la característica ISO asociada
-   ═══════════════════════════════════════════════════════════════════ */
-
 'use strict';
 
-/* ── Datos del modelo (equivalente al PavimentoModel) ─────────── */
-/* ═══════════════════════════════════════════════════
-   ISO 25020 – Trazabilidad: se intenta cargar data.json
-   servido por main.py (datos reales del modelo Python).
-   Si no está disponible (apertura directa del HTML),
-   se usan los valores precalculados como fallback.
-   ═══════════════════════════════════════════════════ */
-let _serverData = null;   // se rellena por loadServerData()
+let _serverData = null;   
 
 async function loadServerData() {
   try {
-    const r = await fetch('data.json', { cache: 'no-store' });
+    // ENRUTAMIENTO VERCEL: Se apunta a la ruta configurada en vercel.json
+    const r = await fetch('/data.json', { cache: 'no-store' });
     if (r.ok) {
       _serverData = await r.json();
-      console.info('[XVial] Datos del modelo Python cargados desde data.json');
+      console.info('[XVial] Datos dinámicos cargados correctamente del backend en Python.');
     }
   } catch (_) {
-    console.info('[XVial] data.json no disponible – usando valores precalculados');
+    console.info('[XVial] API de Python fuera de línea – usando fallback matemático local.');
   }
 }
 
 const MODEL = (() => {
-  /* ISO 25010 – Mantenibilidad: datos centralizados en un objeto inmutable */
   const aforo = {
     'Trufis/Camionetas': 196,
     'Micros':             58,
@@ -564,10 +521,9 @@ const MODEL = (() => {
     'Camiones pesados':  10.0,
   };
 
-  const totalVeh = Object.values(aforo).reduce((a,b)=>a+b, 0); // 563
+  const totalVeh = Object.values(aforo).reduce((a,b)=>a+b, 0); 
   const esalTotal = Object.keys(aforo).reduce((s,k)=>s + aforo[k]*esalFactors[k], 0);
 
-  /* Dataset sintético (500 filas) – misma semilla que Python */
   function seededRand(seed) {
     let s = seed;
     return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
@@ -576,14 +532,11 @@ const MODEL = (() => {
   const N = 500;
   const df = { esal:[], ant:[], lluvia:[], temp:[], flujo:[], label:[] };
   for (let i=0; i<N; i++) {
-    const e = 50 + rng()*2950, a = 1 + rng()*24, l = rng()*200,
-          t = 10 + rng()*25, f = 200 + rng()*1800;
+    const e = 50 + rng()*2950, a = 1 + rng()*24, l = rng()*200, t = 10 + rng()*25, f = 200 + rng()*1800;
     const score = (e>800?3:0)+(a>15?2:0)+(l>100?2:0)+(f>1200?2:0)+(t>28?1:0);
-    df.esal.push(e); df.ant.push(a); df.lluvia.push(l);
-    df.temp.push(t); df.flujo.push(f); df.label.push(score>=4?1:0);
+    df.esal.push(e); df.ant.push(a); df.lluvia.push(l); df.temp.push(t); df.flujo.push(f); df.label.push(score>=4?1:0);
   }
 
-  /* Importancias pre-calculadas (equivalentes al RF entrenado) */
   const importancias = {
     'ESAL equivalente':    0.382,
     'Antigüedad pav.':    0.271,
@@ -592,48 +545,52 @@ const MODEL = (() => {
     'Temperatura':         0.065,
   };
 
-  /* Matriz de confusión (estimada del modelo Python) */
   const confMatrix = [[61,11],[8,45]];
 
-  /* Predicción para aforo real */
   const flujoHorario = totalVeh * 2;
   const esalScore = (esalTotal>800?3:0)+(12>15?2:0)+(45>100?2:0)+(flujoHorario>1200?2:0)+(22>28?1:0);
   let pred = esalScore >= 4 ? 1 : 0;
   const probNeed = pred===1 ? 0.71 : 0.12;
   let probabilities = pred===1 ? [1-probNeed, probNeed] : [1-probNeed, probNeed];
 
-  /* ── Aplicar datos reales del servidor si están disponibles ── */
+  /* MAPEO DINÁMICO EXCLUSIVO PARA COINCIDIR CON LA SERIALIZACIÓN DE PYTHON */
   if (_serverData) {
     try {
-      // Reemplazar aforo con datos reales del modelo Python
       const sd = _serverData;
-      Object.keys(sd.aforo_real || {}).forEach(k => { if(aforo[k]!==undefined) aforo[k]=sd.aforo_real[k]; });
-      // Reemplazar importancias
-      Object.keys(sd.feature_importances || {}).forEach(k => { if(importancias[k]!==undefined) importancias[k]=sd.feature_importances[k]; });
-      // Reemplazar matriz de confusión
+      if (sd.aforo_real) {
+        aforo['Trufis/Camionetas'] = sd.aforo_real['Trufis / Camionetas'] || 196;
+        aforo['Micros']            = sd.aforo_real['Micros'] || 58;
+        aforo['Autos part.']       = sd.aforo_real['Autos particulares'] || 208;
+        aforo['Motos']             = sd.aforo_real['Motos'] || 86;
+        aforo['Camiones pesados']  = sd.aforo_real['Camiones (pesados)'] || 15;
+      }
+      if (sd.feature_importances) {
+        importancias['ESAL equivalente'] = sd.feature_importances['ESAL_equivalente'] || 0.382;
+        importancias['Antigüedad pav.']  = sd.feature_importances['antiguedad_pavimento'] || 0.271;
+        importancias['Flujo horario']     = sd.feature_importances['flujo_horario'] || 0.178;
+        importancias['Lluvia acumulada'] = sd.feature_importances['lluvia_acumulada'] || 0.104;
+        importancias['Temperatura']      = sd.feature_importances['temperatura'] || 0.065;
+      }
       if (sd.confusion_matrix) { confMatrix[0]=sd.confusion_matrix[0]; confMatrix[1]=sd.confusion_matrix[1]; }
-      // Reemplazar predicción
       if (sd.prediccion_resultado !== undefined) pred = sd.prediccion_resultado;
       if (sd.probabilities) { probabilities[0]=sd.probabilities[0]; probabilities[1]=sd.probabilities[1]; }
-    } catch(e) { console.warn('[XVial] Error aplicando datos del servidor:', e); }
+    } catch(e) { console.warn('[XVial] Alerta mapeando el flujo estructurado del JSON de Python:', e); }
   }
 
   return Object.freeze({
-    aforo, esalFactors, totalVeh, esalTotal,
+    aforo, esalFactors, totalVeh, esalTotal: _serverData ? _serverData.esal_total : esalTotal,
     df, importancias, confMatrix, pred, probabilities,
     flujoHorario,
-    predConf: pred===1 ? probNeed : 1-probNeed,
+    predConf: _serverData ? _serverData.prediccion_probabilidad : (pred===1 ? probNeed : 1-probNeed),
   });
 })();
 
-/* ── Paleta de colores ────────────────────────────────────────── */
 const C = {
   palette: ['#58a6ff','#f85149','#3fb950','#e3b341','#bc8cff','#ff7b72'],
   bg:  '#0d1117', card: '#161b22', text: '#e6edf3',
   muted: '#8b949e', accent: '#58a6ff', green: '#3fb950', red: '#f85149',
 };
 
-/* Configuración base de Plotly (ISO 25010 – Consistencia estética) */
 const BASE_LAYOUT = {
   paper_bgcolor: C.card,
   plot_bgcolor:  C.card,
@@ -650,7 +607,7 @@ const BASE_LAYOUT = {
 };
 
 const CONFIG = {
-  responsive: true,          // ISO 25010 – Portabilidad
+  responsive: true,          
   displaylogo: false,
   modeBarButtonsToRemove: ['sendDataToCloud','lasso2d','select2d'],
   toImageButtonOptions: { format:'png', scale:2 },
@@ -660,9 +617,6 @@ function layout(extra={}) {
   return Object.assign({}, BASE_LAYOUT, extra);
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   TABS – definición de todas las pestañas
-   ══════════════════════════════════════════════════════════════════ */
 const TABS = [
   { id:'panel-0',          icon:'📊', label:'Aforo Real',         render: renderAforo3D      },
   { id:'panel-1',          icon:'🥧', label:'Composición',        render: renderComposicion3D },
@@ -675,10 +629,9 @@ const TABS = [
   { id:'iso-panel',        icon:'📋', label:'ISO 25010·25020',    render: renderIsoPanel      },
 ];
 
-let currentTab = 4;   // Inicia en Panel Predicción
+let currentTab = 4;   
 const rendered = new Set();
 
-/* ── Build tabs bar ───────────────────────────────────────────── */
 (function buildTabs() {
   const bar = document.getElementById('tabs-bar');
   TABS.forEach((t, i) => {
@@ -694,15 +647,13 @@ const rendered = new Set();
   });
 })();
 
-/* ── Update header KPIs ───────────────────────────────────────── */
-(function initKpis() {
+function initKpis() {
   document.getElementById('kpi-veh').textContent  = MODEL.totalVeh;
   document.getElementById('kpi-esal').textContent = MODEL.esalTotal.toFixed(0);
   document.getElementById('kpi-conf').textContent = (MODEL.predConf*100).toFixed(1)+'%';
-})();
+}
 
-/* ── Update prediction card ───────────────────────────────────── */
-(function initPredCard() {
+function initPredCard() {
   const card    = document.getElementById('pred-card');
   const emoji   = document.getElementById('pred-emoji');
   const verdict = document.getElementById('pred-verdict');
@@ -715,29 +666,22 @@ const rendered = new Set();
     verdict.textContent = 'NECESITA REPARACIÓN';
     verdict.style.color = C.red;
   } else {
+    card.classList.remove('needs-repair');
+    emoji.textContent   = '✅';
     verdict.textContent = 'SIN REPARACIÓN';
     verdict.style.color = C.green;
   }
   conf.textContent = `Confianza: ${(MODEL.predConf*100).toFixed(1)}%`;
   esal.textContent = `ESAL total (30 min): ${MODEL.esalTotal.toFixed(0)}`;
-})();
+}
 
-/* ══════════════════════════════════════════════════════════════════
-   RENDER FUNCTIONS (cada una cumple una característica ISO 25010)
-   ══════════════════════════════════════════════════════════════════ */
-
-/* Gráfica 1 – Aforo 3D (barras cilíndricas) */
 function renderAforo3D() {
-  /* ISO 25010 – Funcionalidad: muestra datos reales del aforo */
   const labels = Object.keys(MODEL.aforo);
   const values = Object.values(MODEL.aforo);
   const x = labels.map((_,i)=>i);
 
   const traces = labels.map((lbl, i) => ({
-    type: 'bar3d' in Plotly ? 'bar' : 'scatter3d',
-    x: [i], y: [0], z: [values[i]],
     type: 'mesh3d',
-    /* Crear un prisma rectangular para cada barra */
     x: [i-.35,i+.35,i+.35,i-.35, i-.35,i+.35,i+.35,i-.35],
     y: [-.3,-.3,.3,.3, -.3,-.3,.3,.3],
     z: [0,0,0,0, values[i],values[i],values[i],values[i]],
@@ -762,9 +706,7 @@ function renderAforo3D() {
   }), CONFIG);
 }
 
-/* Gráfica 2 – Composición 3D (donut/pie 3D) */
 function renderComposicion3D() {
-  /* ISO 25010 – Usabilidad: etiquetas claras con porcentajes */
   const labels = Object.keys(MODEL.aforo);
   const values = Object.values(MODEL.aforo);
 
@@ -780,15 +722,11 @@ function renderComposicion3D() {
     rotation: 40,
   };
 
-  /* Añadir anillo exterior para efecto 3D visual */
   const traceOuter = {
     type: 'pie',
     labels, values,
     hole: 0.65,
-    marker: {
-      colors: C.palette.map(c=>c+'55'),
-      line: { color:C.bg, width:1 }
-    },
+    marker: { colors: C.palette.map(c=>c+'55'), line: { color:C.bg, width:1 } },
     textinfo: 'none',
     hoverinfo: 'skip',
     rotation: 40,
@@ -809,9 +747,7 @@ function renderComposicion3D() {
   }), CONFIG);
 }
 
-/* Gráfica 3 – Importancia de Variables 3D */
 function renderImportancia3D() {
-  /* ISO 25010 – Confiabilidad: muestra métricas del modelo ML */
   const entries = Object.entries(MODEL.importancias).sort((a,b)=>b[1]-a[1]);
   const names   = entries.map(e=>e[0]);
   const vals    = entries.map(e=>e[1]);
@@ -843,9 +779,7 @@ function renderImportancia3D() {
   }), CONFIG);
 }
 
-/* Gráfica 4 – Matriz de Confusión 3D */
 function renderMatriz3D() {
-  /* ISO 25010 – Funcionalidad: evaluación del modelo ML */
   const cm = MODEL.confMatrix;
   const labels3d = ['Sin rep.','Necesita rep.'];
 
@@ -854,20 +788,13 @@ function renderMatriz3D() {
     z: cm,
     x: labels3d,
     y: labels3d,
-    colorscale: [
-      [0,   '#0d1117'],
-      [0.3, '#0a3069'],
-      [1,   '#58a6ff'],
-    ],
+    colorscale: [[0, '#0d1117'], [0.3, '#0a3069'], [1, '#58a6ff']],
     showscale: true,
     colorbar: { tickfont:{color:C.text}, title:{text:'Cuenta',font:{color:C.text}} },
     hovertemplate: 'Real: %{y}<br>Predicho: %{x}<br>Cuenta: %{z}<extra></extra>',
-    contours: {
-      z: { show:true, usecolormap:true, highlightcolor:C.accent, project:{z:true} }
-    },
+    contours: { z: { show:true, usecolormap:true, highlightcolor:C.accent, project:{z:true} } },
   };
 
-  /* Añadir texto encima de la superficie */
   const annotations3d = [];
   for (let i=0;i<2;i++) for (let j=0;j<2;j++) {
     annotations3d.push({
@@ -891,9 +818,7 @@ function renderMatriz3D() {
   }), CONFIG);
 }
 
-/* Panel 5 – Predicción: gauge 3D */
 function renderPrediccion() {
-  /* ISO 25010 – Usabilidad: panel de resultado claro e inmediato */
   const pct = MODEL.predConf * 100;
   const color = MODEL.pred===1 ? C.red : C.green;
   const label  = MODEL.pred===1 ? 'Necesita reparación' : 'Sin reparación';
@@ -916,11 +841,7 @@ function renderPrediccion() {
         { range:[40,70],  color:'rgba(227,179,65,.12)' },
         { range:[70,100], color:'rgba(248,81,73,.12)' },
       ],
-      threshold: {
-        line:  { color:C.accent, width:3 },
-        thickness: 0.75,
-        value: 50,
-      },
+      threshold: { line:  { color:C.accent, width:3 }, thickness: 0.75, value: 50 },
     },
   };
 
@@ -930,9 +851,7 @@ function renderPrediccion() {
   }), CONFIG);
 }
 
-/* Gráfica 6 – Probabilidades 3D */
 function renderProb3D() {
-  /* ISO 25010 – Transparencia de resultados */
   const p0 = MODEL.probabilities[0]*100;
   const p1 = MODEL.probabilities[1]*100;
 
@@ -965,10 +884,8 @@ function renderProb3D() {
   }), CONFIG);
 }
 
-/* Gráfica 7 – Scatter 3D antigüedad vs carga */
 function renderScatter3D() {
-  /* ISO 25010 – Funcionalidad de análisis exploratorio */
-  const { esal, ant, flujo, temp, label } = MODEL.df;
+  const { esal, ant, flujo, label } = MODEL.df;
   const ok   = label.map((_,i)=>label[i]===0);
   const need = label.map((_,i)=>label[i]===1);
 
@@ -979,8 +896,7 @@ function renderScatter3D() {
     x: subset(ant,ok), y: subset(flujo,ok), z: subset(esal,ok),
     mode: 'markers',
     name: 'Sin reparación',
-    marker: { color:C.green, size:3, opacity:0.55,
-              line:{ color:'rgba(63,185,80,.3)', width:.5 } },
+    marker: { color:C.green, size:3, opacity:0.55, line:{ color:'rgba(63,185,80,.3)', width:.5 } },
     hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Sin rep.</extra>',
   };
 
@@ -989,8 +905,7 @@ function renderScatter3D() {
     x: subset(ant,need), y: subset(flujo,need), z: subset(esal,need),
     mode: 'markers',
     name: 'Necesita reparación',
-    marker: { color:C.red, size:3, opacity:0.55,
-              line:{ color:'rgba(248,81,73,.3)', width:.5 } },
+    marker: { color:C.red, size:3, opacity:0.55, line:{ color:'rgba(248,81,73,.3)', width:.5 } },
     hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Necesita rep.</extra>',
   };
 
@@ -1005,56 +920,30 @@ function renderScatter3D() {
   }), CONFIG);
 }
 
-/* Gráfica 8 – Proyección horaria 3D (superficie) */
 function renderProyeccion3D() {
-  /* ISO 25010 – Funcionalidad predictiva: proyección de demanda */
   const horas = Array.from({length:24}, (_,i)=>i);
   const dias  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const base  = MODEL.totalVeh * 2;
 
-  /* Superficie 24h × 7 días */
   const z = dias.map((_, d) => {
     const wFactor = d < 5 ? 1.0 : d===5 ? 0.75 : 0.55;
-    return horas.map(h =>
-      base * wFactor * (
-        0.3 +
-        0.7 * Math.exp(-((h-7.5)**2) / 4) +
-        0.5 * Math.exp(-((h-17.5)**2) / 5)
-      )
-    );
+    return horas.map(h => base * wFactor * (0.3 + 0.7 * Math.exp(-((h-7.5)**2) / 4) + 0.5 * Math.exp(-((h-17.5)**2) / 5)));
   });
 
   const trace = {
-    type: 'surface',
-    x: horas,
-    y: dias,
-    z: z,
-    colorscale: [
-      [0,   C.bg],
-      [0.3, '#0a3069'],
-      [0.6, '#1f6feb'],
-      [0.85,'#58a6ff'],
-      [1,   '#ea4335'],
-    ],
+    type: 'surface', x: horas, y: dias, z: z,
+    colorscale: [[0, C.bg], [0.3, '#0a3069'], [0.6, '#1f6feb'], [0.85,'#58a6ff'], [1, '#ea4335']],
     showscale: true,
     colorbar: { tickfont:{color:C.text}, title:{text:'Veh/h',font:{color:C.text}} },
-    contours: {
-      z: { show:true, usecolormap:true, highlightcolor:'#fff', project:{z:false} },
-    },
+    contours: { z: { show:true, usecolormap:true, highlightcolor:'#fff', project:{z:false} } },
     opacity: 0.92,
     hovertemplate: 'Hora: %{x}h<br>Día: %{y}<br>Flujo: %{z:.0f} veh/h<extra></extra>',
   };
 
-  /* Línea de umbral crítico */
   const threshold = base * 0.8;
   const threshTrace = {
-    type: 'scatter3d',
-    x: horas,
-    y: horas.map(()=>'Vie'),
-    z: horas.map(()=>threshold),
-    mode: 'lines',
-    line: { color:C.red, width:4, dash:'dash' },
-    name: 'Umbral crítico',
+    type: 'scatter3d', x: horas, y: horas.map(()=>'Vie'), z: horas.map(()=>threshold),
+    mode: 'lines', line: { color:C.red, width:4, dash:'dash' }, name: 'Umbral crítico',
   };
 
   Plotly.newPlot('plot-hora', [trace, threshTrace], layout({
@@ -1068,9 +957,7 @@ function renderProyeccion3D() {
   }), CONFIG);
 }
 
-/* Panel ISO 25010/25020 ─────────────────────────────────────── */
 function renderIsoPanel() {
-  /* ISO 25010 – Mantenibilidad: documentación interna del sistema */
   const panel = document.getElementById('iso-panel');
 
   const metrics25020 = [
@@ -1100,53 +987,23 @@ function renderIsoPanel() {
       <table class="iso-table">
         <thead><tr><th>Característica</th><th>Implementación</th><th>Estado</th></tr></thead>
         <tbody>
-          ${chars25010.map(r=>`
-            <tr>
-              <td><span class="tag-ok">${r.char}</span></td>
-              <td>${r.desc}</td>
-              <td>${r.status}</td>
-            </tr>`).join('')}
+          ${chars25010.map(r=>`<tr><td><span class="tag-ok">${r.char}</span></td><td>${r.desc}</td><td>${r.status}</td></tr>`).join('')}
         </tbody>
       </table>
     </div>
-
     <div class="iso-section">
       <h3>📏 ISO/IEC 25020 – Métricas de Calidad Medibles</h3>
       <table class="iso-table">
         <thead><tr><th>Métrica</th><th>Fórmula</th><th>Valor</th><th>Norma</th></tr></thead>
         <tbody>
-          ${metrics25020.map(r=>`
-            <tr>
-              <td>${r.metric}</td>
-              <td style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${r.formula}</td>
-              <td><b style="color:var(--accent)">${r.value}</b></td>
-              <td><span class="tag-ok">${r.ref}</span></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="iso-section">
-      <h3>🗂️ Trazabilidad de Datos – ISO 25020</h3>
-      <table class="iso-table">
-        <thead><tr><th>Fuente</th><th>Descripción</th><th>Cantidad</th></tr></thead>
-        <tbody>
-          <tr><td>Aforo real</td><td>Conteo vehicular 30 min · Av. Blanco Galindo</td><td>${MODEL.totalVeh} veh</td></tr>
-          <tr><td>Dataset sintético</td><td>Generado con semilla=42, distribución uniforme</td><td>500 muestras</td></tr>
-          <tr><td>Variables de entrada</td><td>ESAL, antigüedad, lluvia, temperatura, flujo</td><td>5 features</td></tr>
-          <tr><td>Modelo</td><td>Random Forest (150 árboles, max_depth=8)</td><td>class_weight=balanced</td></tr>
+          ${metrics25020.map(r=>`<tr><td>${r.metric}</td><td style="font-family:var(--font-mono);font-size:.68rem;color:#8b949e">${r.formula}</td><td><b style="color:var(--accent)">${r.value}</b></td><td><span class="tag-ok">${r.ref}</span></td></tr>`).join('')}
         </tbody>
       </table>
     </div>
   `;
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   NAVEGACIÓN (patrón Command + Factory – ISO 25010 Mantenibilidad)
-   ══════════════════════════════════════════════════════════════════ */
-
 function goTo(idx) {
-  /* ISO 25010 – Eficiencia: renderizado diferido, solo cuando se visita */
   const prev = TABS[currentTab];
   const next = TABS[idx];
 
@@ -1162,42 +1019,27 @@ function goTo(idx) {
   tabBtns[idx].setAttribute('aria-selected','true');
   tabBtns[idx].scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' });
 
-  // Actualizar indicador
-  document.getElementById('pos-indicator').textContent =
-    `Gráfica ${idx+1} de ${TABS.length} · ${next.icon} ${next.label}`;
+  document.getElementById('pos-indicator').textContent = `Gráfica ${idx+1} de ${TABS.length} · ${next.icon} ${next.label}`;
 
-  // Renderizado diferido (lazy render)
   if (!rendered.has(idx)) {
     rendered.add(idx);
     next.render();
   } else {
-    /* Re-resize para casos de cambio de tamaño de ventana */
     const el = document.getElementById(next.id).querySelector('.plotly-container');
     if (el && el.querySelector('.plot-container')) Plotly.Plots.resize(el);
   }
 }
 
-/* Navegación con botones */
-document.getElementById('btn-prev').addEventListener('click', () =>
-  goTo((currentTab - 1 + TABS.length) % TABS.length)
-);
-document.getElementById('btn-next').addEventListener('click', () =>
-  goTo((currentTab + 1) % TABS.length)
-);
+document.getElementById('btn-prev').addEventListener('click', () => goTo((currentTab - 1 + TABS.length) % TABS.length));
+document.getElementById('btn-next').addEventListener('click', () => goTo((currentTab + 1) % TABS.length));
 
-/* ISO 25010 – Usabilidad: navegación por teclado */
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown')
-    goTo((currentTab + 1) % TABS.length);
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')
-    goTo((currentTab - 1 + TABS.length) % TABS.length);
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo((currentTab + 1) % TABS.length);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo((currentTab - 1 + TABS.length) % TABS.length);
 });
 
-/* Gestos táctiles (swipe left/right) – ISO 25010 Portabilidad móvil */
 let touchStartX = 0;
-document.getElementById('chart-area').addEventListener('touchstart', e => {
-  touchStartX = e.changedTouches[0].clientX;
-}, { passive:true });
+document.getElementById('chart-area').addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].clientX; }, { passive:true });
 document.getElementById('chart-area').addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - touchStartX;
   if (Math.abs(dx) > 50) {
@@ -1206,25 +1048,14 @@ document.getElementById('chart-area').addEventListener('touchend', e => {
   }
 }, { passive:true });
 
-/* Exportar PNG del gráfico activo */
 document.getElementById('btn-export').addEventListener('click', () => {
   const tab = TABS[currentTab];
   const cont = document.getElementById(tab.id).querySelector('.plotly-container');
   if (cont && cont.querySelector('.plot-container')) {
-    Plotly.downloadImage(cont, {
-      format: 'png', scale: 2,
-      filename: `xvial_${tab.label.replace(/\s+/g,'_').toLowerCase()}`,
-    });
-  } else {
-    /* Exportar el panel completo como HTML si no hay Plotly */
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([document.documentElement.outerHTML], {type:'text/html'}));
-    a.download = 'xvial_dashboard.html';
-    a.click();
+    Plotly.downloadImage(cont, { format: 'png', scale: 2, filename: `xvial_${tab.label.replace(/\s+/g,'_').toLowerCase()}` });
   }
 });
 
-/* Re-renderizar al redimensionar ventana (ISO 25010 – Portabilidad) */
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
@@ -1237,15 +1068,16 @@ window.addEventListener('resize', () => {
   }, 150);
 });
 
-/* ── Arranque: cargar datos servidor y luego iniciar ─────────── */
 (async function boot() {
   await loadServerData();
   init();
 })();
 
 function init() {
-  document.getElementById('pos-indicator').textContent =
-    `Gráfica ${currentTab+1} de ${TABS.length} · ${TABS[currentTab].icon} ${TABS[currentTab].label}`;
+  initKpis();
+  initPredCard();
+
+  document.getElementById('pos-indicator').textContent = `Gráfica ${currentTab+1} de ${TABS.length} · ${TABS[currentTab].icon} ${TABS[currentTab].label}`;
   document.getElementById(TABS[currentTab].id).classList.add('active');
   rendered.add(currentTab);
   TABS[currentTab].render();

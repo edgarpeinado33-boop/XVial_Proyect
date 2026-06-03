@@ -1,23 +1,16 @@
 """
-XVial – Punto de entrada principal
+XVial – Punto de entrada principal (Dual: Vercel Serverless + Servidor Local)
 Sistema de Predicción de Pavimento · Av. Blanco Galindo, Cochabamba
 
-Arquitectura: MVC
+Arquitectura: MVC Intacta
 Patrones:
   • Creacional  → Singleton (PavimentoModel), Factory Method (CommandFactory)
   • Estructural → Facade (pipeline ML), Composite (ChartComposite)
   • Comportamiento → Observer (ChartObserver), Command (NavigationCommand)
 
 ISO/IEC 25010 – Portabilidad / Funcionalidad:
-  Al ejecutar main.py se inicia un servidor HTTP local y se abre
-  automáticamente el dashboard web (index.html) en el navegador
-  predeterminado del sistema, pasándole los datos reales calculados
-  por el modelo Python vía un archivo JSON temporal (data.json).
-
-ISO/IEC 25020 – Trazabilidad de datos:
-  Los valores mostrados en la interfaz web provienen directamente
-  del modelo scikit-learn entrenado en este proceso Python,
-  garantizando consistencia entre la lógica ML y la visualización.
+  Soporta ejecución híbrida: actúa como Serverless Function nativa en Vercel
+  y como servidor HTTP autoinvocable de forma local.
 """
 
 import sys
@@ -26,18 +19,18 @@ import json
 import time
 import threading
 import webbrowser
-import http.server
+from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler
 import socketserver
 import shutil
 import tempfile
 
-# ── Path setup ────────────────────────────────────────────────────────
+# ── Path setup (Mantiene la carga modular de tu arquitectura) ────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 from models.pavimento_model import PavimentoModel
 
-# ── Configuración del servidor ────────────────────────────────────────
+# ── Configuración para el entorno de desarrollo local ────────────────
 SERVER_PORT  = 8765          # Puerto local; se autoincrementa si está ocupado
 OPEN_BROWSER = True          # False para deshabilitar apertura automática
 RUN_MATPLOTLIB = False       # True para abrir también la ventana matplotlib
@@ -47,11 +40,7 @@ RUN_MATPLOTLIB = False       # True para abrir también la ventana matplotlib
 def build_data_json(model: PavimentoModel) -> dict:
     """
     Serializa los resultados del modelo Python a un dict JSON.
-    El index.html leerá /data.json en el servidor local para
-    reemplazar sus valores precalculados con los datos reales.
-
-    ISO 25020 – Medición: todos los valores son calculados por el
-    clasificador Random Forest entrenado en este proceso.
+    El index.html leerá /data.json para renderizar los gráficos 3D.
     """
     importancias = model.get_feature_importances()
     cm           = model.get_confusion_matrix().tolist()
@@ -91,27 +80,41 @@ def build_data_json(model: PavimentoModel) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════
+class handler(BaseHTTPRequestHandler):
+    """
+    MANEJADOR NATIVO PARA VERCEL SERVERLESS
+    Mapea de forma directa las peticiones GET desde el entorno asíncrono en la nube.
+    """
+    def do_GET(self):
+        if self.path == '/data.json' or self.path == '/main.py':
+            model = PavimentoModel()
+            data = build_data_json(model)
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            self.wfile.write(json.dumps(data, ensure_ascii=False).encode('utf-8'))
+        else:
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"Ruta no encontrada")
+
+
+# ══════════════════════════════════════════════════════════════════════
+# LÓGICA DE TRANSPORTE Y OPERACIONES PARA EL ENTORNO LOCAL
+# ══════════════════════════════════════════════════════════════════════
+
 def prepare_web_dir(data: dict) -> str:
-    """
-    Crea un directorio temporal con los archivos web y el data.json
-    generado por el modelo. Devuelve la ruta del directorio.
-
-    ISO 25010 – Mantenibilidad: separación clara entre el servidor
-    temporal y los archivos fuente del proyecto.
-    """
-    # Directorio temporal para servir
+    """Crea un directorio temporal local con los archivos web y el data.json."""
     web_dir = tempfile.mkdtemp(prefix="xvial_serve_")
-
-    # Copiar index.html al directorio temporal
     src_html = os.path.join(BASE_DIR, "index.html")
     if not os.path.exists(src_html):
-        raise FileNotFoundError(
-            f"No se encontró index.html en {BASE_DIR}\n"
-            "Asegúrate de que index.html está en la misma carpeta que main.py."
-        )
+        raise FileNotFoundError(f"No se encontró index.html en {BASE_DIR}")
+    
     shutil.copy2(src_html, os.path.join(web_dir, "index.html"))
 
-    # Escribir data.json con los datos reales del modelo
     data_path = os.path.join(web_dir, "data.json")
     with open(data_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -119,23 +122,13 @@ def prepare_web_dir(data: dict) -> str:
     return web_dir
 
 
-# ══════════════════════════════════════════════════════════════════════
-class SilentHTTPHandler(http.server.SimpleHTTPRequestHandler):
-    """
-    Handler HTTP que silenció los logs de acceso para no ensuciar
-    la consola durante la sesión interactiva.
-
-    ISO 25010 – Usabilidad: salida de consola limpia y legible.
-    """
-    def log_message(self, format, *args):
-        pass   # suprimir logs de acceso
-
-    def log_error(self, format, *args):
-        pass   # suprimir errores menores (favicon 404, etc.)
+class SilentHTTPHandler(SimpleHTTPRequestHandler):
+    """Manejador estático local con supresión de logs recurrentes."""
+    def log_message(self, format, *args): pass
+    def log_error(self, format, *args): pass
 
 
 def find_free_port(start: int) -> int:
-    """Busca el primer puerto libre a partir de `start`."""
     import socket
     for port in range(start, start + 20):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -144,108 +137,72 @@ def find_free_port(start: int) -> int:
                 return port
             except OSError:
                 continue
-    raise RuntimeError("No se encontró un puerto libre en el rango buscado.")
+    raise RuntimeError("No se encontró un puerto libre.")
 
 
-def start_server(web_dir: str, port: int) -> socketserver.TCPServer:
-    """
-    Levanta el servidor HTTP en un hilo daemon para que no bloquee
-    el proceso principal ni quede huérfano al cerrar.
-
-    ISO 25010 – Fiabilidad: el servidor se limpia automáticamente
-    al terminar el proceso Python.
-    """
+def start_local_server(web_dir: str, port: int) -> socketserver.TCPServer:
     os.chdir(web_dir)
-
     httpd = socketserver.TCPServer(("", port), SilentHTTPHandler)
     httpd.allow_reuse_address = True
-
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
     return httpd
 
 
-# ══════════════════════════════════════════════════════════════════════
 def print_banner(model: PavimentoModel, port: int):
-    """Imprime el reporte del modelo en consola."""
     W = 62
     sep = "═" * W
-
-    resultado_txt = (
-        "✅  NO necesita reparación"
-        if model.prediccion_resultado == 0
-        else "⚠️   SÍ necesita reparación"
-    )
+    resultado_txt = "✅  NO necesita reparación" if model.prediccion_resultado == 0 else "⚠️   SÍ necesita reparación"
 
     print(f"\n{sep}")
     print(f"  XVial – Sistema de Predicción de Pavimento")
     print(f"  Av. Blanco Galindo · Cochabamba, Bolivia")
     print(sep)
-
     print(f"\n  Vehículos totales (30 min) : {model.total_vehiculos}")
     print(f"  ESAL equivalente total     : {model.get_esal_total():.1f}")
-
     print(f"\n  ─── PREDICCIÓN ───────────────────────────────────────")
     print(f"  {resultado_txt}")
     print(f"  Probabilidad de confianza  : {model.prediccion_probabilidad * 100:.1f}%")
-
     print(f"\n  ─── REPORTE DEL CLASIFICADOR ─────────────────────────")
     for line in model.get_report().splitlines():
         print(f"  {line}")
-
     print(f"\n{sep}")
-    print(f"  🌐 Dashboard web disponible en:")
+    print(f"  🌐 Dashboard web disponible localmente en:")
     print(f"     http://localhost:{port}/index.html")
     print(f"\n  El navegador debería abrirse automáticamente.")
     print(f"  Presiona Ctrl+C para detener el servidor.")
     print(f"{sep}\n")
 
 
-# ══════════════════════════════════════════════════════════════════════
-def main():
-    # ── 1. Entrenar modelo ────────────────────────────────────────────
-    print("\n  Iniciando modelo de Machine Learning...")
-    model = PavimentoModel()
+# ── Entrada en modo Local (Ignorado automáticamente por Vercel) ───────
+if __name__ == "__main__":
+    print("\n  [Modo Local] Iniciando modelo de Machine Learning...")
+    local_model = PavimentoModel()
+    local_data = build_data_json(local_model)
+    
+    local_web_dir = prepare_web_dir(local_data)
+    local_port = find_free_port(SERVER_PORT)
+    local_httpd = start_local_server(local_web_dir, local_port)
 
-    # ── 2. Serializar datos reales a JSON ─────────────────────────────
-    data = build_data_json(model)
+    print_banner(local_model, local_port)
 
-    # ── 3. Preparar directorio web con data.json ──────────────────────
-    web_dir = prepare_web_dir(data)
-
-    # ── 4. Buscar puerto libre y levantar servidor ────────────────────
-    port = find_free_port(SERVER_PORT)
-    httpd = start_server(web_dir, port)
-
-    # ── 5. Imprimir resultados en consola ─────────────────────────────
-    print_banner(model, port)
-
-    # ── 6. Abrir navegador ────────────────────────────────────────────
-    url = f"http://localhost:{port}/index.html"
     if OPEN_BROWSER:
-        # Pequeña pausa para que el servidor esté listo
         time.sleep(0.4)
-        webbrowser.open(url)
+        webbrowser.open(f"http://localhost:{local_port}/index.html")
 
-    # ── 7. (Opcional) Abrir también la ventana matplotlib ─────────────
     if RUN_MATPLOTLIB:
         try:
             from controllers.navigation_controller import XVialController
             ctrl = XVialController()
-            ctrl.run()          # bloquea hasta cerrar la ventana
+            ctrl.run()
         except Exception as e:
-            print(f"  [matplotlib] No se pudo abrir la interfaz gráfica: {e}")
+            print(f"  [matplotlib] No se pudo abrir la interfaz gráfica local: {e}")
 
-    # ── 8. Mantener el servidor vivo ──────────────────────────────────
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n  Deteniendo servidor XVial...")
-        httpd.shutdown()
-        shutil.rmtree(web_dir, ignore_errors=True)
+        print("\n  Deteniendo servidor local XVial...")
+        local_httpd.shutdown()
+        shutil.rmtree(local_web_dir, ignore_errors=True)
         print("  ¡Hasta luego!\n")
-
-
-if __name__ == "__main__":
-    main()
