@@ -7,9 +7,11 @@
 <meta name="theme-color" content="#0d1117">
 <title>XVial – Predicción de Pavimento</title>
 
+<!-- ISO 25010: Portabilidad / Usabilidad – Google Fonts para tipografía clara -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 
+<!-- Plotly para gráficos 3D interactivos -->
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 
 <style>
@@ -22,7 +24,7 @@
   --card:     #161b22;
   --border:   #30363d;
   --text:     #e6edf3;
-  --muted:    #8b949e; /* CORREGIDO: Soluciona el bug del color gris atenuado */
+  --muted:    #8b949e; /* CORREGIDO: Soluciona el color gris atenuado en los textos secundarios */
   --accent:   #58a6ff;
   --green:    #3fb950;
   --red:      #f85149;
@@ -411,6 +413,7 @@ nav {
 
 <div id="app">
 
+  <!-- ══ HEADER ══════════════════════════════════════════════════ -->
   <header role="banner">
     <div class="logo">
       <span class="logo-name">XVial</span>
@@ -424,30 +427,37 @@ nav {
     <span class="iso-badge" title="ISO/IEC 25010 + 25020 Compliant">ISO 25010 · 25020</span>
   </header>
 
+  <!-- ══ TABS ════════════════════════════════════════════════════ -->
   <div id="tabs-bar" role="tablist" aria-label="Navegación de gráficas"></div>
 
+  <!-- ══ CHART AREA ══════════════════════════════════════════════ -->
   <main id="chart-area" role="main" aria-live="polite">
 
+    <!-- Panel 0: Aforo 3D -->
     <section class="chart-panel" id="panel-0" role="tabpanel">
       <div class="chart-title">📊 Aforo Real — Av. Blanco Galindo (barras 3D)</div>
       <div class="plotly-container" id="plot-aforo"></div>
     </section>
 
+    <!-- Panel 1: Composición 3D -->
     <section class="chart-panel" id="panel-1" role="tabpanel">
       <div class="chart-title">🥧 Composición Vehicular (%) — gráfico 3D de dona</div>
       <div class="plotly-container" id="plot-comp"></div>
     </section>
 
+    <!-- Panel 2: Importancia de Variables 3D -->
     <section class="chart-panel" id="panel-2" role="tabpanel">
       <div class="chart-title">🧠 Importancia de Variables — Random Forest 3D</div>
       <div class="plotly-container" id="plot-import"></div>
     </section>
 
+    <!-- Panel 3: Matriz de Confusión 3D -->
     <section class="chart-panel" id="panel-3" role="tabpanel">
       <div class="chart-title">🔢 Matriz de Confusión — superficie 3D</div>
       <div class="plotly-container" id="plot-matrix"></div>
     </section>
 
+    <!-- Panel 4: Predicción Principal -->
     <div id="panel-prediccion" role="tabpanel">
       <div class="pred-main-card" id="pred-card">
         <div style="font-size:clamp(2rem,6vw,3.5rem)" id="pred-emoji">✅</div>
@@ -459,25 +469,30 @@ nav {
       <div class="pred-gauge-wrap" id="plot-gauge"></div>
     </div>
 
+    <!-- Panel 5: Probabilidades 3D -->
     <section class="chart-panel" id="panel-5" role="tabpanel">
       <div class="chart-title">📉 Distribución de Probabilidades 3D</div>
       <div class="plotly-container" id="plot-prob"></div>
     </section>
 
+    <!-- Panel 6: Antigüedad vs Carga 3D -->
     <section class="chart-panel" id="panel-6" role="tabpanel">
       <div class="chart-title">📐 Antigüedad vs Carga de Tráfico — scatter 3D</div>
       <div class="plotly-container" id="plot-scatter"></div>
     </section>
 
+    <!-- Panel 7: Proyección Horaria 3D -->
     <section class="chart-panel" id="panel-7" role="tabpanel">
       <div class="chart-title">⏱️ Proyección Horaria del Flujo — superficie 3D</div>
       <div class="plotly-container" id="plot-hora"></div>
     </section>
 
+    <!-- Panel 8: ISO Compliance -->
     <div id="iso-panel" role="tabpanel"></div>
 
   </main>
 
+  <!-- ══ NAV BAR ═════════════════════════════════════════════════ -->
   <nav role="navigation" aria-label="Navegación de gráficas">
     <button class="nav-btn" id="btn-prev" aria-label="Gráfica anterior">◀ Anterior</button>
     <span id="pos-indicator">—</span>
@@ -497,10 +512,12 @@ async function loadServerData() {
     const r = await fetch('/data.json', { cache: 'no-store' });
     if (r.ok) {
       _serverData = await r.json();
-      print('[XVial] Datos dinámicos cargados correctamente del backend en Python.');
+      // CORREGIDO: Cambiado de print() a console.info() para evitar que se abra el gestor de impresión nativo de Android
+      console.info('[XVial] Datos dinámicos cargados correctamente del backend en Python.');
     }
   } catch (_) {
-    print('[XVial] API de Python fuera de línea – usando fallback matemático local.');
+    // CORREGIDO: Redireccionado de forma segura a la consola del navegador
+    console.info('[XVial] API de Python fuera de línea – usando fallback matemático local.');
   }
 }
 
@@ -593,7 +610,7 @@ const BASE_LAYOUT = {
   paper_bgcolor: C.card,
   plot_bgcolor:  C.card,
   font:  { color: C.text, family: "'DM Sans', sans-serif", size: 11 },
-  margin: { l:10, r:10, t:35, b:10 }, // OPTIMIZADO PARA MÓVIL: Evita solapamientos reduciendo paddings fijos
+  margin: { l:10, r:10, t:35, b:10 }, // OPTIMIZADO PARA MÓVIL: Reajusta los contenedores fijos de Plotly
   legend: { bgcolor: C.bg, bordercolor: '#30363d', borderwidth:1 },
   colorway: C.palette,
   scene: {
@@ -652,11 +669,11 @@ function initKpis() {
 }
 
 function initPredCard() {
-  const card    = document.getElementById('pred-card');
-  const emoji   = document.getElementById('pred-emoji');
+  const card = document.getElementById('pred-card');
+  const emoji = document.getElementById('pred-emoji');
   const verdict = document.getElementById('pred-verdict');
-  const conf    = document.getElementById('pred-conf');
-  const esal    = document.getElementById('pred-esal');
+  const conf = document.getElementById('pred-conf');
+  const esal = document.getElementById('pred-esal');
 
   if (MODEL.pred === 1) {
     card.classList.add('needs-repair');
@@ -693,7 +710,6 @@ function renderAforo3D() {
     hovertemplate: `<b>${lbl}</b><br>Cantidad: ${values[i]}<extra></extra>`,
   }));
 
-  // CONFIGURACIÓN MÓVIL OPTIMIZADA: Leyenda reposicionada abajo de forma horizontal
   const isMobile = window.innerWidth <= 640;
   Plotly.newPlot('plot-aforo', traces, layout({
     title: { text:'Aforo vehicular (30 min)', font:{color:C.accent,size:12} },
@@ -941,8 +957,7 @@ function renderProyeccion3D() {
 
   const threshold = base * 0.8;
   const threshTrace = {
-    type: 'scatter3d', x: horas, y: horas.map(()=>'Vie'), z: horas.map(()=>threshold),
-    mode: 'lines', line: { color:C.red, width:4, dash:'dash' }, name: 'Umbral crítico',
+    type: 'scatter3d', x: horas, y: horas.map(()=>'Vie'), z: horas.map(()=>threshold), mode: 'lines', line: { color:C.red, width:4, dash:'dash' }, name: 'Umbral crítico',
   };
 
   Plotly.newPlot('plot-hora', [trace, threshTrace], layout({
@@ -1066,6 +1081,20 @@ window.addEventListener('resize', () => {
     });
   }, 150);
 });
+
+/* ── Arranque: cargar datos servidor y luego iniciar ─────────── */
+async function loadServerData() {
+  try {
+    const r = await fetch('/data.json', { cache: 'no-store' });
+    if (r.ok) {
+      _serverData = await r.json();
+      // CORREGIDO: Reemplazado print() por console.info() para erradicar el bug de la impresora en Android
+      console.info('[XVial] Datos reales del modelo Python cargados dinámicamente.');
+    }
+  } catch (_) {
+    console.info('[XVial] Servidor no disponible – usando fallback de contingencia.');
+  }
+}
 
 (async function boot() {
   await loadServerData();
