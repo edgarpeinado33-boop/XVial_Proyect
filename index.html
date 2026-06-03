@@ -306,7 +306,7 @@ nav {
 }
 .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Contenedor de Multi-Exportación */
+/* Contenedores de Exportación Estilizados */
 .export-group {
   position: relative;
   display: flex;
@@ -352,7 +352,7 @@ nav {
 @media (min-width: 1025px) { #panel-prediccion { grid-template-columns: 340px 1fr; grid-template-rows: 1fr; } .pred-main-card { gap: .75rem; } }
 @media (max-width: 1024px) { #panel-prediccion { grid-template-rows: auto 1fr; grid-template-columns: 1fr; } }
 
-/* Hoja de estilos de impresión limpia para PDF */
+/* CSS estricto para impresión en PDF limpia */
 @media print {
   body, #app, #chart-area, .chart-panel.active, #panel-prediccion.active {
     background: #fff !important;
@@ -559,7 +559,7 @@ const BASE_LAYOUT = {
   paper_bgcolor: C.card,
   plot_bgcolor:  C.card,
   font:  { color: C.text, family: "'DM Sans', sans-serif", size: 11 },
-  margin: { l:10, r:10, t:35, b:10 },
+  margin: { l:10, r:10, t:35, b:10 }, 
   legend: { bgcolor: C.bg, bordercolor: '#30363d', borderwidth:1 },
   colorway: C.palette,
   scene: {
@@ -618,11 +618,11 @@ function initKpis() {
 }
 
 function initPredCard() {
-  const card = document.getElementById('pred-card');
-  const emoji = document.getElementById('pred-emoji');
+  const card    = document.getElementById('pred-card');
+  const emoji   = document.getElementById('pred-emoji');
   const verdict = document.getElementById('pred-verdict');
-  const conf = document.getElementById('pred-conf');
-  const esal = document.getElementById('pred-esal');
+  const conf    = document.getElementById('pred-conf');
+  const esal    = document.getElementById('pred-esal');
 
   if (MODEL.pred === 1) {
     card.classList.add('needs-repair');
@@ -921,7 +921,7 @@ function renderProyeccion3D() {
   }), CONFIG);
 }
 
-// 📐 RESTAURACIÓN COMPLETA: Reconstrucción fiel de las tres tablas ISO 25010/25020 originales
+// 🔧 CORRECCIÓN ESTRUCTURAL DE TABLAS ISO: Mapeo y cierre perfecto de etiquetas semánticas
 function renderIsoPanel() {
   const panel = document.getElementById('iso-panel');
 
@@ -950,30 +950,78 @@ function renderIsoPanel() {
     <div class="iso-section">
       <h3>📐 ISO/IEC 25010 – Características de Calidad del Producto</h3>
       <table class="iso-table">
-        <thead><tr><th>Característica</th><th>Implementación</th><th>Estado</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Característica</th>
+            <th>Implementación</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
         <tbody>
-          ${chars25010.map(r=>`<tr><td><span class="tag-ok">${r.char}</span></td><td>${r.desc}</td><td>${r.status}</td></tr>`).join('')}
+          ${chars25010.map(r=>`
+            <tr>
+              <td><span class="tag-ok">${r.char}</span></td>
+              <td>${r.desc}</td>
+              <td>${r.status}</td>
+            </tr>
+          `).join('')}
         </tbody>
       </table>
     </div>
     <div class="iso-section">
       <h3>📏 ISO/IEC 25020 – Métricas de Calidad Medibles</h3>
       <table class="iso-table">
-        <thead><tr><th>Métrica</th><th>Fórmula</th><th>Valor</th><th>Norma</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Métrica</th>
+            <th>Fórmula</th>
+            <th>Valor</th>
+            <th>Norma</th>
+          </tr>
+        </thead>
         <tbody>
-          ${metrics25020.map(r=>`<tr><td>${r.metric}</td><td style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${r.formula}</td><td><b style="color:var(--accent)">${r.value}</b></td><td><span class="tag-ok">${r.ref}</span></td></tr>`).join('')}
+          ${metrics25020.map(r=>`
+            <tr>
+              <td>${r.metric}</td>
+              <td style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${r.formula}</td>
+              <td><b style="color:var(--accent)">${r.value}</b></td>
+              <td><span class="tag-ok">${r.ref}</span></td>
+            </tr>
+          `).join('')}
         </tbody>
       </table>
     </div>
     <div class="iso-section">
       <h3>🗂️ Trazabilidad de Datos – ISO 25020</h3>
       <table class="iso-table">
-        <thead><tr><th>Fuente</th><th>Descripción</th><th>Cantidad</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Fuente</th>
+            <th>Descripción</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td>Aforo real</td><td>Conteo vehicular 30 min · Av. Blanco Galindo</td><td><b>${MODEL.totalVeh} veh</b></td></tr>
-          <tr><td>Dataset sintético</td><td>Generado con semilla=42, distribución uniforme</td><td><b>500 muestras</b></td></tr>
-          <tr><td>Variables de entrada</td><td>ESAL, antigüedad, lluvia, temperatura, flujo</td><td><b>5 features</b></td></tr>
-          <tr><td>Modelo ML</td><td>Random Forest Classifier (150 árboles, max_depth=8)</td><td><b>class_weight=balanced</b></td></tr>
+          <tr>
+            <td>Aforo real</td>
+            <td>Conteo vehicular 30 min · Av. Blanco Galindo</td>
+            <td><b>${MODEL.totalVeh} veh</b></td>
+          </tr>
+          <tr>
+            <td>Dataset sintético</td>
+            <td>Generado con semilla=42, distribución uniforme</td>
+            <td><b>500 muestras</b></td>
+          </tr>
+          <tr>
+            <td>Variables de entrada</td>
+            <td>ESAL, antigüedad, lluvia, temperatura, flujo</td>
+            <td><b>5 features</b></td>
+          </tr>
+          <tr>
+            <td>Modelo ML</td>
+            <td>Random Forest Classifier (150 árboles, max_depth=8)</td>
+            <td><b>class_weight=balanced</b></td>
+          </tr>
         </tbody>
       </table>
     </div>
