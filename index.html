@@ -277,6 +277,55 @@ header {
   overflow: hidden;
 }
 
+/* ══════════════════════ ISO PANEL RESTAURADO ════════════════════════════════ */
+#iso-panel {
+  display: none;
+  height: 100%;
+  padding: .75rem;
+  overflow-y: auto;
+  animation: fadeSlide .25s ease;
+  gap: 1.2rem;
+  flex-direction: column;
+}
+#iso-panel.active { display: flex; }
+
+.iso-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+.iso-section h3 {
+  font-family: var(--font-mono);
+  font-size: .88rem;
+  color: var(--accent);
+  margin-bottom: .75rem;
+}
+.iso-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.iso-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--border);
+}
+.iso-table td {
+  padding: .6rem .75rem;
+  border-bottom: 1px solid rgba(48,54,61,.5);
+  vertical-align: middle;
+}
+.iso-table tr:last-child td { border-bottom: none; }
+.tag-ok {
+  display: inline-block;
+  background: rgba(63,185,80,.15);
+  border: 1px solid var(--green);
+  color: var(--green);
+  border-radius: 4px;
+  padding: .15rem .45rem;
+  font-size: .7rem;
+  font-family: var(--font-mono);
+}
+
 /* ══════════════════════ NAV BAR ═════════════════════════════════ */
 nav {
   background: var(--card);
@@ -306,7 +355,6 @@ nav {
 }
 .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Contenedores de Exportación Estilizados */
 .export-group {
   position: relative;
   display: flex;
@@ -351,23 +399,6 @@ nav {
 @media (min-width: 641px) and (max-width: 1024px) { .logo-sub { max-width: 180px; } }
 @media (min-width: 1025px) { #panel-prediccion { grid-template-columns: 340px 1fr; grid-template-rows: 1fr; } .pred-main-card { gap: .75rem; } }
 @media (max-width: 1024px) { #panel-prediccion { grid-template-rows: auto 1fr; grid-template-columns: 1fr; } }
-
-/* CSS estricto para impresión en PDF limpia */
-@media print {
-  body, #app, #chart-area, .chart-panel.active, #panel-prediccion.active {
-    background: #fff !important;
-    color: #000 !important;
-    display: block !important;
-    height: auto !important;
-  }
-  header, #tabs-bar, nav, .chart-title { display: none !important; }
-  .plotly-container, .pred-gauge-wrap, .pred-main-card {
-    border: 1px solid #ccc !important;
-    background: #fff !important;
-    box-shadow: none !important;
-    page-break-inside: avoid;
-  }
-}
 </style>
 </head>
 <body>
@@ -649,9 +680,7 @@ function renderAforo3D() {
     x: [i-.35,i+.35,i+.35,i-.35, i-.35,i+.35,i+.35,i-.35],
     y: [-.3,-.3,.3,.3, -.3,-.3,.3,.3],
     z: [0,0,0,0, values[i],values[i],values[i],values[i]],
-    i:[7,0,0,0,4,4,6,6,4,0,3,2],
-    j:[3,4,1,2,5,6,5,2,0,1,6,3],
-    k:[0,7,2,3,6,7,1,1,5,5,7,6],
+    i:[7,0,0,0,4,4,6,6,4,0,3,2], j:[3,4,1,2,5,6,5,2,0,1,6,3], k:[0,7,2,3,6,7,1,1,5,5,7,6],
     color: C.palette[i % C.palette.length],
     opacity: 0.9,
     name: lbl,
@@ -725,9 +754,7 @@ function renderImportancia3D() {
     x: [i-.38,i+.38,i+.38,i-.38, i-.38,i+.38,i+.38,i-.38],
     y: [-.25,-.25,.25,.25, -.25,-.25,.25,.25],
     z: [0,0,0,0, vals[i],vals[i],vals[i],vals[i]],
-    i:[7,0,0,0,4,4,6,6,4,0,3,2],
-    j:[3,4,1,2,5,6,5,2,0,1,6,3],
-    k:[0,7,2,3,6,7,1,1,5,5,7,6],
+    i:[7,0,0,0,4,4,6,6,4,0,3,2], j:[3,4,1,2,5,6,5,2,0,1,6,3], k:[0,7,2,3,6,7,1,1,5,5,7,6],
     color: C.palette[i],
     opacity: 0.88,
     name: n,
@@ -921,7 +948,6 @@ function renderProyeccion3D() {
   }), CONFIG);
 }
 
-// 🔧 CORRECCIÓN ESTRUCTURAL DE TABLAS ISO: Mapeo y cierre perfecto de etiquetas semánticas
 function renderIsoPanel() {
   const panel = document.getElementById('iso-panel');
 
