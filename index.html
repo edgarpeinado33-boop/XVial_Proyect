@@ -306,7 +306,7 @@ nav {
 }
 .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* CONTENEDOR MULTI-EXPORTACIÓN REORGANIZADO */
+/* Contenedor de Multi-Exportación */
 .export-group {
   position: relative;
   display: flex;
@@ -352,7 +352,7 @@ nav {
 @media (min-width: 1025px) { #panel-prediccion { grid-template-columns: 340px 1fr; grid-template-rows: 1fr; } .pred-main-card { gap: .75rem; } }
 @media (max-width: 1024px) { #panel-prediccion { grid-template-rows: auto 1fr; grid-template-columns: 1fr; } }
 
-/* ══════════════════════ HOJA DE ESTILOS DE IMPRESIÓN (PDF) ══════════════════════ */
+/* Hoja de estilos de impresión limpia para PDF */
 @media print {
   body, #app, #chart-area, .chart-panel.active, #panel-prediccion.active {
     background: #fff !important;
@@ -906,7 +906,8 @@ function renderProyeccion3D() {
 
   const threshold = base * 0.8;
   const threshTrace = {
-    type: 'scatter3d', x: horas, y: horas.map(()=>'Vie'), z: horas.map(()=>threshold), mode: 'lines', line: { color:C.red, width:4, dash:'dash' }, name: 'Umbral crítico',
+    type: 'scatter3d', x: horas, y: horas.map(()=>'Vie'), z: horas.map(()=>threshold),
+    mode: 'lines', line: { color:C.red, width:4, dash:'dash' }, name: 'Umbral crítico',
   };
 
   Plotly.newPlot('plot-hora', [trace, threshTrace], layout({
@@ -920,6 +921,7 @@ function renderProyeccion3D() {
   }), CONFIG);
 }
 
+// 📐 RESTAURACIÓN COMPLETA: Reconstrucción fiel de las tres tablas ISO 25010/25020 originales
 function renderIsoPanel() {
   const panel = document.getElementById('iso-panel');
 
@@ -960,6 +962,18 @@ function renderIsoPanel() {
         <thead><tr><th>Métrica</th><th>Fórmula</th><th>Valor</th><th>Norma</th></tr></thead>
         <tbody>
           ${metrics25020.map(r=>`<tr><td>${r.metric}</td><td style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${r.formula}</td><td><b style="color:var(--accent)">${r.value}</b></td><td><span class="tag-ok">${r.ref}</span></td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="iso-section">
+      <h3>🗂️ Trazabilidad de Datos – ISO 25020</h3>
+      <table class="iso-table">
+        <thead><tr><th>Fuente</th><th>Descripción</th><th>Cantidad</th></tr></thead>
+        <tbody>
+          <tr><td>Aforo real</td><td>Conteo vehicular 30 min · Av. Blanco Galindo</td><td><b>${MODEL.totalVeh} veh</b></td></tr>
+          <tr><td>Dataset sintético</td><td>Generado con semilla=42, distribución uniforme</td><td><b>500 muestras</b></td></tr>
+          <tr><td>Variables de entrada</td><td>ESAL, antigüedad, lluvia, temperatura, flujo</td><td><b>5 features</b></td></tr>
+          <tr><td>Modelo ML</td><td>Random Forest Classifier (150 árboles, max_depth=8)</td><td><b>class_weight=balanced</b></td></tr>
         </tbody>
       </table>
     </div>
@@ -1011,14 +1025,10 @@ document.getElementById('chart-area').addEventListener('touchend', e => {
   }
 }, { passive:true });
 
-/* ══════════════════════ COMPONENTES DE EXPORTACIÓN (EXCEL Y PDF) ══════════════════════ */
-
-// 1. CONTROLADOR DE DESCARGA EXCEL (Formato CSV compatible con UTF-8 para eñes y tildes)
+/* ── Controladores de Multi-Exportación ───────────────────────── */
 document.getElementById('btn-excel').addEventListener('click', () => {
   let csvRows = [];
-  
-  // Encabezado general del reporte
-  csvRows.push('--- REPORTE DE EVALUACION VIAL DE PAVIMENTO (XVIAL) ---');
+  csvRows.push('--- REPORTE DE EVALUACION VIAL DE PAVIMENTO (THROUGH VERCEL) ---');
   csvRows.push('Ubicacion;Av. Blanco Galindo - Cochabamba, Bolivia');
   csvRows.push(`Total Vehiculos Contados (30 min);${MODEL.totalVeh}`);
   csvRows.push(`ESAL Equivalente Acumulado;${MODEL.esalTotal.toFixed(2)}`);
@@ -1026,7 +1036,6 @@ document.getElementById('btn-excel').addEventListener('click', () => {
   csvRows.push(`Confianza de Clasificacion;${(MODEL.predConf * 100).toFixed(1)}%`);
   csvRows.push('');
 
-  // Sección 1: Datos de Aforo Real
   csvRows.push('--- DETALLE DE AFORO VEHICULAR ---');
   csvRows.push('Tipo de Vehiculo;Cantidad Contada;Factor ESAL');
   Object.keys(MODEL.aforo).forEach(k => {
@@ -1034,7 +1043,6 @@ document.getElementById('btn-excel').addEventListener('click', () => {
   });
   csvRows.push('');
 
-  // Sección 2: Dataset de Entrenamiento
   csvRows.push('--- DATASET SINTETICO DE ENTRENAMIENTO (MUESTRAS) ---');
   csvRows.push('Muestra;ESAL Equivalente;Antiguedad (Anos);Flujo Vehicular;Estatus Pavimento');
   const d = MODEL.df;
@@ -1042,7 +1050,6 @@ document.getElementById('btn-excel').addEventListener('click', () => {
     csvRows.push(`${i+1};${d.esal[i].toFixed(2)};${d.ant[i].toFixed(1)};${d.flujo[i].toFixed(0)};${d.label[i] === 1 ? 'Defectuoso' : 'Optimo'}`);
   }
 
-  // Generar el archivo Blob con BOM para forzar el reconocimiento UTF-8 de Excel
   const csvContent = '\uFEFF' + csvRows.join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
@@ -1051,9 +1058,7 @@ document.getElementById('btn-excel').addEventListener('click', () => {
   a.click();
 });
 
-// 2. CONTROLADOR DE DESCARGA PDF
 document.getElementById('btn-pdf').addEventListener('click', () => {
-  // Dispara el submenú de guardado nativo del dispositivo (PC o Celular)
   window.print();
 });
 
@@ -1068,18 +1073,6 @@ window.addEventListener('resize', () => {
     });
   }, 150);
 });
-
-async function loadServerData() {
-  try {
-    const r = await fetch('/data.json', { cache: 'no-store' });
-    if (r.ok) {
-      _serverData = await r.json();
-      console.info('[XVial] Datos reales del modelo Python cargados dinámicamente.');
-    }
-  } catch (_) {
-    console.info('[XVial] Servidor no disponible – usando fallback de contingencia.');
-  }
-}
 
 (async function boot() {
   await loadServerData();
