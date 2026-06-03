@@ -22,7 +22,7 @@
   --card:     #161b22;
   --border:   #30363d;
   --text:     #e6edf3;
-  --muted:    --muted;
+  --muted:    #8b949e; /* CORREGIDO: Soluciona el bug del color gris atenuado */
   --accent:   #58a6ff;
   --green:    #3fb950;
   --red:      #f85149;
@@ -94,7 +94,7 @@ header {
 }
 .logo-sub {
   font-size: clamp(.6rem, 1.5vw, .78rem);
-  color: #8b949e;
+  color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -127,7 +127,7 @@ header {
 }
 .kpi-chip .lbl {
   font-size: .6rem;
-  color: #8b949e;
+  color: var(--muted);
   text-align: center;
   line-height: 1.2;
 }
@@ -166,7 +166,7 @@ header {
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
-  color: #8b949e;
+  color: var(--muted);
   font-family: var(--font-sans);
   font-size: clamp(.62rem, 1.5vw, .75rem);
   font-weight: 600;
@@ -257,12 +257,12 @@ header {
 }
 .pred-conf {
   font-size: clamp(.8rem, 2vw, 1rem);
-  color: #8b949e;
+  color: var(--muted);
 }
 .pred-esal {
   font-family: var(--font-mono);
   font-size: clamp(.65rem, 1.5vw, .78rem);
-  color: #8b949e;
+  color: var(--muted);
   border-top: 1px solid var(--border);
   padding-top: .4rem;
   width: 100%;
@@ -315,7 +315,7 @@ nav {
 #pos-indicator {
   font-family: var(--font-mono);
   font-size: clamp(.58rem, 1.4vw, .72rem);
-  color: #8b949e;
+  color: var(--muted);
   text-align: center;
   flex: 1;
 }
@@ -347,7 +347,7 @@ nav {
 .iso-table { width: 100%; border-collapse: collapse; font-size: .72rem; }
 .iso-table th {
   text-align: left;
-  color: #8b949e;
+  color: var(--muted);
   font-weight: 600;
   padding: .3rem .5rem;
   border-bottom: 1px solid var(--border);
@@ -453,7 +453,7 @@ nav {
         <div style="font-size:clamp(2rem,6vw,3.5rem)" id="pred-emoji">✅</div>
         <div class="pred-verdict" id="pred-verdict">SIN REPARACIÓN</div>
         <div class="pred-conf" id="pred-conf">Confianza: —%</div>
-        <div style="font-size:clamp(.62rem,1.5vw,.76rem);color:#8b949e">Av. Blanco Galindo · Cochabamba</div>
+        <div style="font-size:clamp(.62rem,1.5vw,.76rem);color:var(--muted)">Av. Blanco Galindo · Cochabamba</div>
         <div class="pred-esal" id="pred-esal">ESAL total (30 min): —</div>
       </div>
       <div class="pred-gauge-wrap" id="plot-gauge"></div>
@@ -494,14 +494,13 @@ let _serverData = null;
 
 async function loadServerData() {
   try {
-    // ENRUTAMIENTO VERCEL: Se apunta a la ruta configurada en vercel.json
     const r = await fetch('/data.json', { cache: 'no-store' });
     if (r.ok) {
       _serverData = await r.json();
-      console.info('[XVial] Datos dinámicos cargados correctamente del backend en Python.');
+      print('[XVial] Datos dinámicos cargados correctamente del backend en Python.');
     }
   } catch (_) {
-    console.info('[XVial] API de Python fuera de línea – usando fallback matemático local.');
+    print('[XVial] API de Python fuera de línea – usando fallback matemático local.');
   }
 }
 
@@ -553,7 +552,6 @@ const MODEL = (() => {
   const probNeed = pred===1 ? 0.71 : 0.12;
   let probabilities = pred===1 ? [1-probNeed, probNeed] : [1-probNeed, probNeed];
 
-  /* MAPEO DINÁMICO EXCLUSIVO PARA COINCIDIR CON LA SERIALIZACIÓN DE PYTHON */
   if (_serverData) {
     try {
       const sd = _serverData;
@@ -574,7 +572,7 @@ const MODEL = (() => {
       if (sd.confusion_matrix) { confMatrix[0]=sd.confusion_matrix[0]; confMatrix[1]=sd.confusion_matrix[1]; }
       if (sd.prediccion_resultado !== undefined) pred = sd.prediccion_resultado;
       if (sd.probabilities) { probabilities[0]=sd.probabilities[0]; probabilities[1]=sd.probabilities[1]; }
-    } catch(e) { console.warn('[XVial] Alerta mapeando el flujo estructurado del JSON de Python:', e); }
+    } catch(e) { console.warn('[XVial] Error mapeando datos dinámicos:', e); }
   }
 
   return Object.freeze({
@@ -595,7 +593,7 @@ const BASE_LAYOUT = {
   paper_bgcolor: C.card,
   plot_bgcolor:  C.card,
   font:  { color: C.text, family: "'DM Sans', sans-serif", size: 11 },
-  margin: { l:55, r:20, t:35, b:50 },
+  margin: { l:10, r:10, t:35, b:10 }, // OPTIMIZADO PARA MÓVIL: Evita solapamientos reduciendo paddings fijos
   legend: { bgcolor: C.bg, bordercolor: '#30363d', borderwidth:1 },
   colorway: C.palette,
   scene: {
@@ -695,13 +693,17 @@ function renderAforo3D() {
     hovertemplate: `<b>${lbl}</b><br>Cantidad: ${values[i]}<extra></extra>`,
   }));
 
+  // CONFIGURACIÓN MÓVIL OPTIMIZADA: Leyenda reposicionada abajo de forma horizontal
+  const isMobile = window.innerWidth <= 640;
   Plotly.newPlot('plot-aforo', traces, layout({
     title: { text:'Aforo vehicular (30 min)', font:{color:C.accent,size:12} },
+    showlegend: true,
+    legend: isMobile ? { orientation: 'h', x: 0, y: -0.2, font: { size: 9 } } : { font: { size: 10 } },
     scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { tickvals:x, ticktext:labels, tickangle:0, tickfont:{color:C.text,size:9} },
+      xaxis: { tickvals:x, ticktext:labels, tickfont:{color:C.text,size: isMobile ? 7.5 : 9} },
       zaxis: { title:'Cantidad', tickfont:{color:C.text} },
       yaxis: { visible:false },
-      camera: { eye:{x:1.8,y:-1.8,z:1.3} },
+      camera: isMobile ? { eye:{x:1.3, y:-2.1, z:1.0} } : { eye:{x:1.8,y:-1.8,z:1.3} },
     }),
   }), CONFIG);
 }
@@ -737,7 +739,7 @@ function renderComposicion3D() {
     title: { text:'Composición vehicular porcentual', font:{color:C.accent,size:12} },
     showlegend: true,
     legend: { orientation:'h', y:-0.15, font:{color:C.text,size:9} },
-    margin: { l:20, r:20, t:45, b:60 },
+    margin: { l:10, r:10, t:45, b:60 },
     annotations: [{
       text: `<b>${MODEL.totalVeh}</b><br>veh`,
       showarrow: false,
@@ -768,13 +770,16 @@ function renderImportancia3D() {
     hovertemplate:`<b>${n}</b><br>Importancia: ${vals[i].toFixed(3)}<extra></extra>`,
   }));
 
+  const isMobile = window.innerWidth <= 640;
   Plotly.newPlot('plot-import', traces, layout({
     title: { text:'Importancia de variables – Random Forest', font:{color:C.accent,size:12} },
+    showlegend: true,
+    legend: isMobile ? { orientation: 'h', x: 0, y: -0.2, font: { size: 9 } } : { font: { size: 10 } },
     scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { tickvals:x, ticktext:names, tickfont:{color:C.text,size:8} },
+      xaxis: { tickvals:x, ticktext:names, tickfont:{color:C.text,size: isMobile ? 7 : 8} },
       zaxis: { title:'Importancia', tickfont:{color:C.text} },
       yaxis: { visible:false },
-      camera: { eye:{x:1.6,y:-1.6,z:1.4} },
+      camera: isMobile ? { eye:{x:1.3, y:-2.1, z:1.1} } : { eye:{x:1.6,y:-1.6,z:1.4} },
     }),
   }), CONFIG);
 }
@@ -796,7 +801,7 @@ function renderMatriz3D() {
   };
 
   const annotations3d = [];
-  for (let i=0;i<2;i++) for (let j=0;j<2;j++) {
+  for (let i=0; i<2; i++) for (let j=0; j<2; j++) {
     annotations3d.push({
       x:labels3d[j], y:labels3d[i], z:cm[i][j]+3,
       text:`<b>${cm[i][j]}</b>`,
@@ -847,7 +852,7 @@ function renderPrediccion() {
 
   Plotly.newPlot('plot-gauge', [trace], layout({
     title: { text:'Nivel de confianza del modelo', font:{color:C.accent,size:12} },
-    margin: { l:40,r:40,t:50,b:30 },
+    margin: { l:30,r:30,t:50,b:30 },
   }), CONFIG);
 }
 
@@ -863,9 +868,7 @@ function renderProb3D() {
     x: [i-.42,i+.42,i+.42,i-.42, i-.42,i+.42,i+.42,i-.42],
     y: [-.3,-.3,.3,.3, -.3,-.3,.3,.3],
     z: [0,0,0,0, [p0,p1][i],[p0,p1][i],[p0,p1][i],[p0,p1][i]],
-    i:[7,0,0,0,4,4,6,6,4,0,3,2],
-    j:[3,4,1,2,5,6,5,2,0,1,6,3],
-    k:[0,7,2,3,6,7,1,1,5,5,7,6],
+    i:[7,0,0,0,4,4,6,6,4,0,3,2], j:[3,4,1,2,5,6,5,2,0,1,6,3], k:[0,7,2,3,6,7,1,1,5,5,7,6],
     color: colors[i],
     opacity: 0.9,
     name: labels[i],
@@ -873,13 +876,16 @@ function renderProb3D() {
     hovertemplate:`<b>${labels[i]}</b><br>${[p0,p1][i].toFixed(1)}%<extra></extra>`,
   }));
 
+  const isMobile = window.innerWidth <= 640;
   Plotly.newPlot('plot-prob', traces, layout({
     title: { text:'Distribución de probabilidades del clasificador', font:{color:C.accent,size:12} },
+    showlegend: true,
+    legend: isMobile ? { orientation: 'h', x: 0, y: -0.2, font: { size: 9 } } : { font: { size: 10 } },
     scene: Object.assign({}, BASE_LAYOUT.scene, {
       xaxis: { tickvals:[0,1], ticktext:labels, tickfont:{color:C.text,size:9} },
       zaxis: { title:'Probabilidad (%)', range:[0,110], tickfont:{color:C.text} },
       yaxis: { visible:false },
-      camera: { eye:{x:1.6,y:-1.6,z:1.5} },
+      camera: isMobile ? { eye:{x:1.3, y:-2.1, z:1.2} } : { eye:{x:1.6,y:-1.6,z:1.5} },
     }),
   }), CONFIG);
 }
@@ -892,25 +898,19 @@ function renderScatter3D() {
   function subset(arr, mask) { return arr.filter((_,i)=>mask[i]); }
 
   const traceOk = {
-    type: 'scatter3d',
-    x: subset(ant,ok), y: subset(flujo,ok), z: subset(esal,ok),
-    mode: 'markers',
-    name: 'Sin reparación',
+    type: 'scatter3d', x: subset(ant,ok), y: subset(flujo,ok), z: subset(esal,ok), mode: 'markers', name: 'Sin reparación',
     marker: { color:C.green, size:3, opacity:0.55, line:{ color:'rgba(63,185,80,.3)', width:.5 } },
     hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Sin rep.</extra>',
   };
 
   const traceNeed = {
-    type: 'scatter3d',
-    x: subset(ant,need), y: subset(flujo,need), z: subset(esal,need),
-    mode: 'markers',
-    name: 'Necesita reparación',
+    type: 'scatter3d', x: subset(ant,need), y: subset(flujo,need), z: subset(esal,need), mode: 'markers', name: 'Necesita reparación',
     marker: { color:C.red, size:3, opacity:0.55, line:{ color:'rgba(248,81,73,.3)', width:.5 } },
     hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Necesita rep.</extra>',
   };
 
   Plotly.newPlot('plot-scatter', [traceOk, traceNeed], layout({
-    title: { text:'Dataset de entrenamiento: Antigüedad / Flujo / ESAL', font:{color:C.accent,size:12} },
+    title: { text:'Dataset de entrenamiento: Antigüedad / Flujo / ESAL', font:{color:C.accent,size:11} },
     scene: Object.assign({}, BASE_LAYOUT.scene, {
       xaxis: { title:'Antigüedad (años)', tickfont:{color:C.text} },
       yaxis: { title:'Flujo horario',     tickfont:{color:C.text} },
@@ -935,8 +935,7 @@ function renderProyeccion3D() {
     colorscale: [[0, C.bg], [0.3, '#0a3069'], [0.6, '#1f6feb'], [0.85,'#58a6ff'], [1, '#ea4335']],
     showscale: true,
     colorbar: { tickfont:{color:C.text}, title:{text:'Veh/h',font:{color:C.text}} },
-    contours: { z: { show:true, usecolormap:true, highlightcolor:'#fff', project:{z:false} } },
-    opacity: 0.92,
+    contours: { z: { show:true, usecolormap:true, highlightcolor:'#fff', project:{z:false} } }, opacity: 0.92,
     hovertemplate: 'Hora: %{x}h<br>Día: %{y}<br>Flujo: %{z:.0f} veh/h<extra></extra>',
   };
 
@@ -996,7 +995,7 @@ function renderIsoPanel() {
       <table class="iso-table">
         <thead><tr><th>Métrica</th><th>Fórmula</th><th>Valor</th><th>Norma</th></tr></thead>
         <tbody>
-          ${metrics25020.map(r=>`<tr><td>${r.metric}</td><td style="font-family:var(--font-mono);font-size:.68rem;color:#8b949e">${r.formula}</td><td><b style="color:var(--accent)">${r.value}</b></td><td><span class="tag-ok">${r.ref}</span></td></tr>`).join('')}
+          ${metrics25020.map(r=>`<tr><td>${r.metric}</td><td style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${r.formula}</td><td><b style="color:var(--accent)">${r.value}</b></td><td><span class="tag-ok">${r.ref}</span></td></tr>`).join('')}
         </tbody>
       </table>
     </div>
