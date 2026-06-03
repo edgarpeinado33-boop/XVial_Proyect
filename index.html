@@ -7,9 +7,11 @@
 <meta name="theme-color" content="#0d1117">
 <title>XVial – Predicción de Pavimento</title>
 
+<!-- ISO 25010: Portabilidad / Usabilidad – Google Fonts para tipografía clara -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 
+<!-- Plotly para gráficos 3D interactivos -->
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 
 <style>
@@ -399,12 +401,31 @@ nav {
 @media (min-width: 641px) and (max-width: 1024px) { .logo-sub { max-width: 180px; } }
 @media (min-width: 1025px) { #panel-prediccion { grid-template-columns: 340px 1fr; grid-template-rows: 1fr; } .pred-main-card { gap: .75rem; } }
 @media (max-width: 1024px) { #panel-prediccion { grid-template-rows: auto 1fr; grid-template-columns: 1fr; } }
+
+/* CSS estricto para impresión en PDF limpia */
+@media print {
+  body, #app, #chart-area, .chart-panel.active, #panel-prediccion.active, #iso-panel.active {
+    background: #fff !important;
+    color: #000 !important;
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  header, #tabs-bar, nav, .chart-title, .tag-ok { display: none !important; }
+  .plotly-container, .pred-gauge-wrap, .pred-main-card, .iso-section {
+    border: 1px solid #ccc !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}
 </style>
 </head>
 <body>
 
 <div id="app">
 
+  <!-- ══ HEADER ══════════════════════════════════════════════════ -->
   <header role="banner">
     <div class="logo">
       <span class="logo-name">XVial</span>
@@ -418,8 +439,10 @@ nav {
     <span class="iso-badge" title="ISO/IEC 25010 + 25020 Compliant">ISO 25010 · 25020</span>
   </header>
 
+  <!-- ══ TABS ════════════════════════════════════════════════════ -->
   <div id="tabs-bar" role="tablist" aria-label="Navegación de gráficas"></div>
 
+  <!-- ══ CHART AREA ══════════════════════════════════════════════ -->
   <main id="chart-area" role="main" aria-live="polite">
 
     <section class="chart-panel" id="panel-0" role="tabpanel">
@@ -472,6 +495,7 @@ nav {
 
   </main>
 
+  <!-- ══ NAV BAR ═════════════════════════════════════════════════ -->
   <nav role="navigation" aria-label="Navegación de gráficas">
     <button class="nav-btn" id="btn-prev" aria-label="Gráfica anterior">◀ Anterior</button>
     <span id="pos-indicator">—</span>
@@ -882,32 +906,58 @@ function renderProb3D() {
   }), CONFIG);
 }
 
+// 📐 EXCLUSIVO SCATTER 3D: Optimización móvil de escala, descarte de colisión de títulos y cámara
 function renderScatter3D() {
   const { esal, ant, flujo, label } = MODEL.df;
   const ok   = label.map((_,i)=>label[i]===0);
   const need = label.map((_,i)=>label[i]===1);
 
   function subset(arr, mask) { return arr.filter((_,i)=>mask[i]); }
+  const isMobile = window.innerWidth <= 640;
 
   const traceOk = {
-    type: 'scatter3d', x: subset(ant,ok), y: subset(flujo,ok), z: subset(esal,ok), mode: 'markers', name: 'Sin reparación',
-    marker: { color:C.green, size:3, opacity:0.55, line:{ color:'rgba(63,185,80,.3)', width:.5 } },
-    hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Sin rep.</extra>',
+    type: 'scatter3d', 
+    x: subset(ant,ok), 
+    y: subset(flujo,ok), 
+    z: subset(esal,ok), 
+    mode: 'markers', 
+    name: 'Sin reparación',
+    marker: { 
+      color: C.green, 
+      size: isMobile ? 1.8 : 3, // CORREGIDO: Puntos más pequeños en móvil para que respire la visualización
+      opacity: 0.6, 
+      line: { color: 'rgba(63,185,80,.2)', width: 0.3 } 
+    },
+    hovertemplate: 'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Sin rep.</extra>',
   };
 
   const traceNeed = {
-    type: 'scatter3d', x: subset(ant,need), y: subset(flujo,need), z: subset(esal,need), mode: 'markers', name: 'Necesita reparación',
-    marker: { color:C.red, size:3, opacity:0.55, line:{ color:'rgba(248,81,73,.3)', width:.5 } },
-    hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Necesita rep.</extra>',
+    type: 'scatter3d', 
+    x: subset(ant,need), 
+    y: subset(flujo,need), 
+    z: subset(esal,need), 
+    mode: 'markers', 
+    name: 'Necesita reparación',
+    marker: { 
+      color: C.red, 
+      size: isMobile ? 1.8 : 3, // CORREGIDO: Reducción simétrica de tamaño de punto en celulares
+      opacity: 0.6, 
+      line: { color: 'rgba(248,81,73,.2)', width: 0.3 } 
+    },
+    hovertemplate: 'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Necesita rep.</extra>',
   };
 
   Plotly.newPlot('plot-scatter', [traceOk, traceNeed], layout({
-    title: { text:'Dataset de entrenamiento: Antigüedad / Flujo / ESAL', font:{color:C.accent,size:11} },
+    // CORREGIDO: Removemos el title de Plotly en móvil para eliminar la colisión con la barra de herramientas flotante
+    title: isMobile ? null : { text: 'Dataset de entrenamiento: Antigüedad / Flujo / ESAL', font: { color: C.accent, size: 11 } },
+    showlegend: true,
+    legend: isMobile ? { orientation: 'h', x: 0, y: -0.15, font: { size: 9 } } : { font: { size: 10 } },
     scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { title:'Antigüedad (años)', tickfont:{color:C.text} },
-      yaxis: { title:'Flujo horario',     tickfont:{color:C.text} },
-      zaxis: { title:'ESAL equiv.',       tickfont:{color:C.text} },
-      camera: { eye:{x:1.6,y:-1.6,z:1.2} },
+      xaxis: { title: 'Antigüedad (años)', tickfont: { color: C.text, size: isMobile ? 8 : 10 } },
+      yaxis: { title: 'Flujo horario',     tickfont: { color: C.text, size: isMobile ? 8 : 10 } },
+      zaxis: { title: 'ESAL equiv.',       tickfont: { color: C.text, size: isMobile ? 8 : 10 } },
+      // CORREGIDO: Cámara con mayor retroceso y altura en celulares para evitar que se corten los nombres de los ejes
+      camera: isMobile ? { eye: { x: 1.45, y: -1.95, z: 1.15 } } : { eye: { x: 1.6, y: -1.6, z: 1.2 } },
     }),
   }), CONFIG);
 }
@@ -1002,7 +1052,7 @@ function renderIsoPanel() {
             <th>Métrica</th>
             <th>Fórmula</th>
             <th>Valor</th>
-            <th>Norma</th>
+            <th>Normal</th>
           </tr>
         </thead>
         <tbody>
