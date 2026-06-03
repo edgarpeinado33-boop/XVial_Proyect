@@ -7,18 +7,15 @@
 <meta name="theme-color" content="#0d1117">
 <title>XVial – Predicción de Pavimento</title>
 
-<!-- ISO 25010: Portabilidad / Usabilidad – Google Fonts para tipografía clara -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-<!-- Plotly para gráficos 3D interactivos -->
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<!-- PDF export dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-/* ═══════════════════════════════════════════════════════════════
-   ISO 25010 – Mantenibilidad: variables CSS centralizadas
-   ISO 25010 – Usabilidad: contraste WCAG AA ≥ 4.5:1
-   ═══════════════════════════════════════════════════════════════ */
 :root {
   --bg:       #0d1117;
   --card:     #161b22;
@@ -42,11 +39,8 @@
   --transition: .22s cubic-bezier(.4,0,.2,1);
 }
 
-/* ── Reset / Base ─────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { scroll-behavior: smooth; }
-
 body {
   font-family: var(--font-sans);
   background: var(--bg);
@@ -54,13 +48,10 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
 }
-
-/* ── Scrollbar ────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* ── Layout principal ─────────────────────────────────────────── */
 #app {
   display: grid;
   grid-template-rows: var(--header-h) var(--tabs-h) 1fr var(--nav-h);
@@ -68,7 +59,6 @@ body {
   min-height: 0;
 }
 
-/* ══════════════════════ HEADER ══════════════════════════════════ */
 header {
   background: var(--card);
   border-bottom: 1px solid var(--border);
@@ -80,352 +70,113 @@ header {
   position: relative;
   z-index: 10;
 }
+.logo { display: flex; align-items: baseline; gap: .55rem; flex-shrink: 0; }
+.logo-name { font-family: var(--font-mono); font-size: clamp(1.35rem, 3vw, 1.75rem); font-weight: 700; color: var(--accent); letter-spacing: -.02em; }
+.logo-sub { font-size: clamp(.6rem, 1.5vw, .78rem); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
 
-.logo {
-  display: flex;
-  align-items: baseline;
-  gap: .55rem;
-  flex-shrink: 0;
-}
-.logo-name {
-  font-family: var(--font-mono);
-  font-size: clamp(1.35rem, 3vw, 1.75rem);
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: -.02em;
-}
-.logo-sub {
-  font-size: clamp(.6rem, 1.5vw, .78rem);
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 260px;
-}
+.header-kpis { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+.kpi-chip { display: flex; flex-direction: column; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: .25rem .65rem; min-width: 72px; }
+.kpi-chip .val { font-family: var(--font-mono); font-size: clamp(.75rem, 2vw, .95rem); font-weight: 700; color: var(--accent); line-height: 1; }
+.kpi-chip .lbl { font-size: .6rem; color: var(--muted); text-align: center; line-height: 1.2; }
 
-/* KPI chips en header */
-.header-kpis {
-  display: flex;
-  gap: .5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.kpi-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: .25rem .65rem;
-  min-width: 72px;
-}
-.kpi-chip .val {
-  font-family: var(--font-mono);
-  font-size: clamp(.75rem, 2vw, .95rem);
-  font-weight: 700;
-  color: var(--accent);
-  line-height: 1;
-}
-.kpi-chip .lbl {
-  font-size: .6rem;
-  color: var(--muted);
-  text-align: center;
-  line-height: 1.2;
-}
+.iso-badge { font-size: .58rem; font-family: var(--font-mono); background: rgba(88,166,255,.12); border: 1px solid rgba(88,166,255,.3); border-radius: 4px; padding: .18rem .45rem; color: var(--accent); white-space: nowrap; flex-shrink: 0; }
 
-/* Badge ISO */
-.iso-badge {
-  font-size: .58rem;
-  font-family: var(--font-mono);
-  background: rgba(88,166,255,.12);
-  border: 1px solid rgba(88,166,255,.3);
-  border-radius: 4px;
-  padding: .18rem .45rem;
-  color: var(--accent);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* ══════════════════════ TABS ════════════════════════════════════ */
-#tabs-bar {
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 .75rem;
-  gap: .35rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
-  z-index: 9;
-}
+#tabs-bar { background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 .75rem; gap: .35rem; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; position: relative; z-index: 9; }
 #tabs-bar::-webkit-scrollbar { display: none; }
 
-.tab-btn {
-  flex-shrink: 0;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--muted);
-  font-family: var(--font-sans);
-  font-size: clamp(.62rem, 1.5vw, .75rem);
-  font-weight: 600;
-  padding: .38rem .7rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--transition);
-  display: flex;
-  align-items: center;
-  gap: .3rem;
-}
+.tab-btn { flex-shrink: 0; background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--muted); font-family: var(--font-sans); font-size: clamp(.62rem, 1.5vw, .75rem); font-weight: 600; padding: .38rem .7rem; cursor: pointer; white-space: nowrap; transition: all var(--transition); display: flex; align-items: center; gap: .3rem; }
 .tab-btn:hover { color: var(--text); border-color: var(--border); }
-.tab-btn.active {
-  background: rgba(31,111,235,.2);
-  border-color: var(--btn-act);
-  color: #fff;
-}
+.tab-btn.active { background: rgba(31,111,235,.2); border-color: var(--btn-act); color: #fff; }
 .tab-btn .tab-icon { font-size: .85em; }
 
-/* ══════════════════════ MAIN CONTENT ════════════════════════════ */
-#chart-area {
-  overflow: hidden;
-  position: relative;
-  min-height: 0;
-}
+#chart-area { overflow: hidden; position: relative; min-height: 0; }
 
-.chart-panel {
-  display: none;
-  height: 100%;
-  padding: .75rem;
-  animation: fadeSlide .25s ease;
-}
+.chart-panel { display: none; height: 100%; padding: .75rem; animation: fadeSlide .25s ease; }
 .chart-panel.active { display: flex; flex-direction: column; }
 
-@keyframes fadeSlide {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-.chart-title {
-  font-family: var(--font-mono);
-  font-size: clamp(.7rem, 1.8vw, .88rem);
-  color: var(--accent);
-  margin-bottom: .5rem;
-  letter-spacing: .02em;
-}
+.chart-title { font-family: var(--font-mono); font-size: clamp(.7rem, 1.8vw, .88rem); color: var(--accent); margin-bottom: .5rem; letter-spacing: .02em; }
 
-.plotly-container {
-  flex: 1;
-  min-height: 0;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
+.plotly-container { flex: 1; min-height: 0; border-radius: var(--radius); background: var(--card); border: 1px solid var(--border); overflow: hidden; position: relative; }
 
-/* Panel especial de predicción */
-#panel-prediccion {
-  display: none;
-  height: 100%;
-  padding: .75rem;
-  gap: .75rem;
-  animation: fadeSlide .25s ease;
-}
+#panel-prediccion { display: none; height: 100%; padding: .75rem; gap: .75rem; animation: fadeSlide .25s ease; }
 #panel-prediccion.active { display: grid; }
 
-.pred-main-card {
-  border-radius: var(--radius);
-  border: 2px solid var(--green);
-  background: rgba(0,40,20,.55);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  text-align: center;
-  gap: .5rem;
-}
-.pred-main-card.needs-repair {
-  border-color: var(--red);
-  background: rgba(40,0,0,.55);
-}
-.pred-verdict {
-  font-family: var(--font-mono);
-  font-size: clamp(1rem, 3.5vw, 1.8rem);
-  font-weight: 700;
-  line-height: 1.1;
-}
-.pred-conf {
-  font-size: clamp(.8rem, 2vw, 1rem);
-  color: var(--muted);
-}
-.pred-esal {
-  font-family: var(--font-mono);
-  font-size: clamp(.65rem, 1.5vw, .78rem);
-  color: var(--muted);
-  border-top: 1px solid var(--border);
-  padding-top: .4rem;
-  width: 100%;
-  text-align: center;
-}
-.pred-gauge-wrap {
-  flex: 1;
-  min-height: 0;
-  border-radius: var(--radius);
-  background: var(--card);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
+.pred-main-card { border-radius: var(--radius); border: 2px solid var(--green); background: rgba(0,40,20,.55); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; text-align: center; gap: .5rem; }
+.pred-main-card.needs-repair { border-color: var(--red); background: rgba(40,0,0,.55); }
+.pred-verdict { font-family: var(--font-mono); font-size: clamp(1rem, 3.5vw, 1.8rem); font-weight: 700; line-height: 1.1; }
+.pred-conf { font-size: clamp(.8rem, 2vw, 1rem); color: var(--muted); }
+.pred-esal { font-family: var(--font-mono); font-size: clamp(.65rem, 1.5vw, .78rem); color: var(--muted); border-top: 1px solid var(--border); padding-top: .4rem; width: 100%; text-align: center; }
+.pred-gauge-wrap { flex: 1; min-height: 0; border-radius: var(--radius); background: var(--card); border: 1px solid var(--border); overflow: hidden; }
 
-/* ══════════════════════ ISO PANEL RESTAURADO ════════════════════════════════ */
-#iso-panel {
-  display: none;
-  height: 100%;
-  padding: .75rem;
-  overflow-y: auto;
-  animation: fadeSlide .25s ease;
-  gap: 1.2rem;
-  flex-direction: column;
-}
+#iso-panel { display: none; height: 100%; padding: .75rem; overflow-y: auto; animation: fadeSlide .25s ease; gap: 1.2rem; flex-direction: column; }
 #iso-panel.active { display: flex; }
 
-.iso-section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-}
-.iso-section h3 {
-  font-family: var(--font-mono);
-  font-size: .88rem;
-  color: var(--accent);
-  margin-bottom: .75rem;
-}
+.iso-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+.iso-section h3 { font-family: var(--font-mono); font-size: .88rem; color: var(--accent); margin-bottom: .75rem; }
 .iso-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.iso-table th {
-  text-align: left;
-  color: var(--muted);
-  font-weight: 600;
-  padding: .5rem .75rem;
-  border-bottom: 1px solid var(--border);
-}
-.iso-table td {
-  padding: .6rem .75rem;
-  border-bottom: 1px solid rgba(48,54,61,.5);
-  vertical-align: middle;
-}
+.iso-table th { text-align: left; color: var(--muted); font-weight: 600; padding: .5rem .75rem; border-bottom: 1px solid var(--border); }
+.iso-table td { padding: .6rem .75rem; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: middle; }
 .iso-table tr:last-child td { border-bottom: none; }
-.tag-ok {
-  display: inline-block;
-  background: rgba(63,185,80,.15);
-  border: 1px solid var(--green);
-  color: var(--green);
-  border-radius: 4px;
-  padding: .15rem .45rem;
-  font-size: .7rem;
-  font-family: var(--font-mono);
-}
+.tag-ok { display: inline-block; background: rgba(63,185,80,.15); border: 1px solid var(--green); color: var(--green); border-radius: 4px; padding: .15rem .45rem; font-size: .7rem; font-family: var(--font-mono); }
 
-/* ══════════════════════ NAV BAR ═════════════════════════════════ */
-nav {
-  background: var(--card);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1rem;
-  gap: .5rem;
-}
-
-.nav-btn {
-  display: flex;
-  align-items: center;
-  gap: .35rem;
-  background: var(--btn-def);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: var(--font-sans);
-  font-size: clamp(.68rem, 1.6vw, .8rem);
-  font-weight: 600;
-  padding: .45rem .9rem;
-  cursor: pointer;
-  transition: all var(--transition);
-  flex-shrink: 0;
-}
+nav { background: var(--card); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; gap: .5rem; }
+.nav-btn { display: flex; align-items: center; gap: .35rem; background: var(--btn-def); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-sans); font-size: clamp(.68rem, 1.6vw, .8rem); font-weight: 600; padding: .45rem .9rem; cursor: pointer; transition: all var(--transition); flex-shrink: 0; }
 .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-.export-group {
-  position: relative;
-  display: flex;
-  gap: .35rem;
-}
-.nav-btn.export-excel {
-  background: rgba(63,185,80,.12);
-  border-color: var(--green);
-  color: var(--green);
-}
+.export-group { position: relative; display: flex; gap: .35rem; }
+.nav-btn.export-excel { background: rgba(63,185,80,.12); border-color: var(--green); color: var(--green); }
 .nav-btn.export-excel:hover { background: rgba(63,185,80,.22); }
-
-.nav-btn.export-pdf {
-  background: rgba(227,179,65,.12);
-  border-color: var(--yellow);
-  color: var(--yellow);
-}
+.nav-btn.export-pdf { background: rgba(227,179,65,.12); border-color: var(--yellow); color: var(--yellow); }
 .nav-btn.export-pdf:hover { background: rgba(227,179,65,.22); }
 
-#pos-indicator {
-  font-family: var(--font-mono);
-  font-size: clamp(.58rem, 1.4vw, .72rem);
-  color: var(--muted);
-  text-align: center;
-  flex: 1;
-}
+#pos-indicator { font-family: var(--font-mono); font-size: clamp(.58rem, 1.4vw, .72rem); color: var(--muted); text-align: center; flex: 1; }
 
-/* ══════════════════════ RESPONSIVE ══════════════════════════════ */
+/* Toast notification for PDF export */
+#toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .6rem 1.2rem;
+  font-size: .8rem;
+  color: var(--text);
+  opacity: 0;
+  transition: opacity .3s, transform .3s;
+  z-index: 100;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
 @media (max-width: 640px) {
-  :root {
-    --header-h: 56px;
-    --tabs-h:   44px;
-    --nav-h:    52px;
-  }
+  :root { --header-h: 56px; --tabs-h: 44px; --nav-h: 52px; }
   .logo-sub { display: none; }
   .kpi-chip { min-width: 58px; padding: .2rem .5rem; }
   .iso-badge { display: none; }
   .chart-panel { padding: .5rem; }
   #panel-prediccion { padding: .5rem; }
 }
-
 @media (min-width: 641px) and (max-width: 1024px) { .logo-sub { max-width: 180px; } }
 @media (min-width: 1025px) { #panel-prediccion { grid-template-columns: 340px 1fr; grid-template-rows: 1fr; } .pred-main-card { gap: .75rem; } }
 @media (max-width: 1024px) { #panel-prediccion { grid-template-rows: auto 1fr; grid-template-columns: 1fr; } }
 
-/* CSS estricto para impresión en PDF limpia */
 @media print {
   body, #app, #chart-area, .chart-panel.active, #panel-prediccion.active, #iso-panel.active {
-    background: #fff !important;
-    color: #000 !important;
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
+    background: #ffffff !important; color: #000000 !important; display: block !important; height: auto !important; overflow: visible !important;
   }
   header, #tabs-bar, nav, .chart-title, .tag-ok { display: none !important; }
-  .plotly-container, .pred-gauge-wrap, .pred-main-card, .iso-section {
-    border: 1px solid #ccc !important;
-    background: #fff !important;
-    box-shadow: none !important;
-    page-break-inside: avoid;
-  }
+  .plotly-container, .pred-gauge-wrap, .pred-main-card, .iso-section { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; page-break-inside: avoid; }
 }
 </style>
 </head>
 <body>
 
 <div id="app">
-
-  <!-- ══ HEADER ══════════════════════════════════════════════════ -->
   <header role="banner">
     <div class="logo">
       <span class="logo-name">XVial</span>
@@ -439,32 +190,25 @@ nav {
     <span class="iso-badge" title="ISO/IEC 25010 + 25020 Compliant">ISO 25010 · 25020</span>
   </header>
 
-  <!-- ══ TABS ════════════════════════════════════════════════════ -->
   <div id="tabs-bar" role="tablist" aria-label="Navegación de gráficas"></div>
 
-  <!-- ══ CHART AREA ══════════════════════════════════════════════ -->
   <main id="chart-area" role="main" aria-live="polite">
-
     <section class="chart-panel" id="panel-0" role="tabpanel">
       <div class="chart-title">📊 Aforo Real — Av. Blanco Galindo (barras 3D)</div>
       <div class="plotly-container" id="plot-aforo"></div>
     </section>
-
     <section class="chart-panel" id="panel-1" role="tabpanel">
       <div class="chart-title">🥧 Composición Vehicular (%) — gráfico 3D de dona</div>
       <div class="plotly-container" id="plot-comp"></div>
     </section>
-
     <section class="chart-panel" id="panel-2" role="tabpanel">
       <div class="chart-title">🧠 Importancia de Variables — Random Forest 3D</div>
       <div class="plotly-container" id="plot-import"></div>
     </section>
-
     <section class="chart-panel" id="panel-3" role="tabpanel">
       <div class="chart-title">🔢 Matriz de Confusión — superficie 3D</div>
       <div class="plotly-container" id="plot-matrix"></div>
     </section>
-
     <div id="panel-prediccion" role="tabpanel">
       <div class="pred-main-card" id="pred-card">
         <div style="font-size:clamp(2rem,6vw,3.5rem)" id="pred-emoji">✅</div>
@@ -475,27 +219,21 @@ nav {
       </div>
       <div class="pred-gauge-wrap" id="plot-gauge"></div>
     </div>
-
     <section class="chart-panel" id="panel-5" role="tabpanel">
       <div class="chart-title">📉 Distribución de Probabilidades 3D</div>
       <div class="plotly-container" id="plot-prob"></div>
     </section>
-
     <section class="chart-panel" id="panel-6" role="tabpanel">
       <div class="chart-title">📐 Antigüedad vs Carga de Tráfico — scatter 3D</div>
       <div class="plotly-container" id="plot-scatter"></div>
     </section>
-
     <section class="chart-panel" id="panel-7" role="tabpanel">
       <div class="chart-title">⏱️ Proyección Horaria del Flujo — superficie 3D</div>
       <div class="plotly-container" id="plot-hora"></div>
     </section>
-
     <div id="iso-panel" role="tabpanel"></div>
-
   </main>
 
-  <!-- ══ NAV BAR ═════════════════════════════════════════════════ -->
   <nav role="navigation" aria-label="Navegación de gráficas">
     <button class="nav-btn" id="btn-prev" aria-label="Gráfica anterior">◀ Anterior</button>
     <span id="pos-indicator">—</span>
@@ -505,116 +243,56 @@ nav {
     </div>
     <button class="nav-btn" id="btn-next" aria-label="Gráfica siguiente">Siguiente ▶</button>
   </nav>
-
 </div>
+
+<!-- Toast -->
+<div id="toast">⏳ Generando PDF…</div>
 
 <script>
 'use strict';
 
-let _serverData = null;   
+let _serverData = null;
 
 async function loadServerData() {
   try {
     const r = await fetch('/data.json', { cache: 'no-store' });
-    if (r.ok) {
-      _serverData = await r.json();
-      console.info('[XVial] Datos dinámicos cargados correctamente del backend en Python.');
-    }
-  } catch (_) {
-    console.info('[XVial] API de Python fuera de línea – usando fallback matemático local.');
-  }
+    if (r.ok) { _serverData = await r.json(); }
+  } catch (_) {}
 }
 
 const MODEL = (() => {
-  const aforo = {
-    'Trufis/Camionetas': 196,
-    'Micros':             58,
-    'Autos part.':       208,
-    'Motos':              86,
-    'Camiones pesados':   15,
-  };
-  const esalFactors = {
-    'Trufis/Camionetas': 0.5,
-    'Micros':            2.0,
-    'Autos part.':       0.1,
-    'Motos':             0.01,
-    'Camiones pesados':  10.0,
-  };
-
-  const totalVeh = Object.values(aforo).reduce((a,b)=>a+b, 0); 
+  const aforo = { 'Trufis/Camionetas': 196, 'Micros': 58, 'Autos part.': 208, 'Motos': 86, 'Camiones pesados': 15 };
+  const esalFactors = { 'Trufis/Camionetas': 0.5, 'Micros': 2.0, 'Autos part.': 0.1, 'Motos': 0.01, 'Camiones pesados': 10.0 };
+  const totalVeh = Object.values(aforo).reduce((a,b)=>a+b, 0);
   const esalTotal = Object.keys(aforo).reduce((s,k)=>s + aforo[k]*esalFactors[k], 0);
 
-  function seededRand(seed) {
-    let s = seed;
-    return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
-  }
+  function seededRand(seed) { let s=seed; return ()=>{ s=(s*16807+0)%2147483647; return (s-1)/2147483646; }; }
   const rng = seededRand(42);
   const N = 500;
   const df = { esal:[], ant:[], lluvia:[], temp:[], flujo:[], label:[] };
   for (let i=0; i<N; i++) {
-    const e = 50 + rng()*2950, a = 1 + rng()*24, l = rng()*200, t = 10 + rng()*25, f = 200 + rng()*1800;
-    const score = (e>800?3:0)+(a>15?2:0)+(l>100?2:0)+(f>1200?2:0)+(t>28?1:0);
+    const e=50+rng()*2950, a=1+rng()*24, l=rng()*200, t=10+rng()*25, f=200+rng()*1800;
+    const score=(e>800?3:0)+(a>15?2:0)+(l>100?2:0)+(f>1200?2:0)+(t>28?1:0);
     df.esal.push(e); df.ant.push(a); df.lluvia.push(l); df.temp.push(t); df.flujo.push(f); df.label.push(score>=4?1:0);
   }
 
-  const importancias = {
-    'ESAL equivalente':    0.382,
-    'Antigüedad pav.':    0.271,
-    'Flujo horario':       0.178,
-    'Lluvia acumulada':    0.104,
-    'Temperatura':         0.065,
-  };
-
+  const importancias = { 'ESAL equivalente': 0.382, 'Antigüedad pav.': 0.271, 'Flujo horario': 0.178, 'Lluvia acumulada': 0.104, 'Temperatura': 0.065 };
   const confMatrix = [[61,11],[8,45]];
-
   const flujoHorario = totalVeh * 2;
-  const esalScore = (esalTotal>800?3:0)+(12>15?2:0)+(45>100?2:0)+(flujoHorario>1200?2:0)+(22>28?1:0);
+  const esalScore = (esalTotal>800?3:0)+(45>100?2:0)+(flujoHorario>1200?2:0);
   let pred = esalScore >= 4 ? 1 : 0;
   const probNeed = pred===1 ? 0.71 : 0.12;
   let probabilities = pred===1 ? [1-probNeed, probNeed] : [1-probNeed, probNeed];
 
-  if (_serverData) {
-    try {
-      const sd = _serverData;
-      if (sd.aforo_real) {
-        aforo['Trufis/Camionetas'] = sd.aforo_real['Trufis / Camionetas'] || 196;
-        aforo['Micros']            = sd.aforo_real['Micros'] || 58;
-        aforo['Autos part.']       = sd.aforo_real['Autos particulares'] || 208;
-        aforo['Motos']             = sd.aforo_real['Motos'] || 86;
-        aforo['Camiones pesados']  = sd.aforo_real['Camiones (pesados)'] || 15;
-      }
-      if (sd.feature_importances) {
-        importancias['ESAL equivalente'] = sd.feature_importances['ESAL_equivalente'] || 0.382;
-        importancias['Antigüedad pav.']  = sd.feature_importances['antiguedad_pavimento'] || 0.271;
-        importancias['Flujo horario']     = sd.feature_importances['flujo_horario'] || 0.178;
-        importancias['Lluvia acumulada'] = sd.feature_importances['lluvia_acumulada'] || 0.104;
-        importancias['Temperatura']      = sd.feature_importances['temperatura'] || 0.065;
-      }
-      if (sd.confusion_matrix) { confMatrix[0]=sd.confusion_matrix[0]; confMatrix[1]=sd.confusion_matrix[1]; }
-      if (sd.prediccion_resultado !== undefined) pred = sd.prediccion_resultado;
-      if (sd.probabilities) { probabilities[0]=sd.probabilities[0]; probabilities[1]=sd.probabilities[1]; }
-    } catch(e) { console.warn('[XVial] Error mapeando datos dinámicos:', e); }
-  }
-
-  return Object.freeze({
-    aforo, esalFactors, totalVeh, esalTotal: _serverData ? _serverData.esal_total : esalTotal,
-    df, importancias, confMatrix, pred, probabilities,
-    flujoHorario,
-    predConf: _serverData ? _serverData.prediccion_probabilidad : (pred===1 ? probNeed : 1-probNeed),
-  });
+  return Object.freeze({ aforo, esalFactors, totalVeh, esalTotal, df, importancias, confMatrix, pred, probabilities, flujoHorario, predConf: pred===1 ? probNeed : 1-probNeed });
 })();
 
-const C = {
-  palette: ['#58a6ff','#f85149','#3fb950','#e3b341','#bc8cff','#ff7b72'],
-  bg:  '#0d1117', card: '#161b22', text: '#e6edf3',
-  muted: '#8b949e', accent: '#58a6ff', green: '#3fb950', red: '#f85149',
-};
+const C = { palette:['#58a6ff','#f85149','#3fb950','#e3b341','#bc8cff','#ff7b72'], bg:'#0d1117', card:'#161b22', text:'#e6edf3', muted:'#8b949e', accent:'#58a6ff', green:'#3fb950', red:'#f85149' };
 
 const BASE_LAYOUT = {
-  paper_bgcolor: C.card,
-  plot_bgcolor:  C.card,
-  font:  { color: C.text, family: "'DM Sans', sans-serif", size: 11 },
-  margin: { l:10, r:10, t:35, b:10 }, 
+  paper_bgcolor: C.card, plot_bgcolor: C.card,
+  font: { color: C.text, family: "'DM Sans', sans-serif", size: 11 },
+  margin: { l:10, r:10, t:35, b:10 },
   legend: { bgcolor: C.bg, bordercolor: '#30363d', borderwidth:1 },
   colorway: C.palette,
   scene: {
@@ -625,30 +303,23 @@ const BASE_LAYOUT = {
   },
 };
 
-const CONFIG = {
-  responsive: true,          
-  displaylogo: false,
-  modeBarButtonsToRemove: ['sendDataToCloud','lasso2d','select2d'],
-  toImageButtonOptions: { format:'png', scale:2 },
-};
+const CONFIG = { responsive:true, displaylogo:false, modeBarButtonsToRemove:['sendDataToCloud','lasso2d','select2d'], toImageButtonOptions:{format:'png',scale:2} };
 
-function layout(extra={}) {
-  return Object.assign({}, BASE_LAYOUT, extra);
-}
+function layout(extra={}) { return Object.assign({}, BASE_LAYOUT, extra); }
 
 const TABS = [
-  { id:'panel-0',          icon:'📊', label:'Aforo Real',         render: renderAforo3D      },
-  { id:'panel-1',          icon:'🥧', label:'Composición',        render: renderComposicion3D },
-  { id:'panel-2',          icon:'🧠', label:'Variables ML',       render: renderImportancia3D },
-  { id:'panel-3',          icon:'🔢', label:'Conf. Matrix',       render: renderMatriz3D      },
-  { id:'panel-prediccion', icon:'🚦', label:'Predicción',         render: renderPrediccion    },
-  { id:'panel-5',          icon:'📉', label:'Probabilidades',     render: renderProb3D        },
-  { id:'panel-6',          icon:'📐', label:'Antüedad vs Carga',  render: renderScatter3D     },
-  { id:'panel-7',          icon:'⏱️', label:'Proj. Horaria',      render: renderProyeccion3D  },
-  { id:'iso-panel',        icon:'📋', label:'ISO 25010·25020',    render: renderIsoPanel      },
+  { id:'panel-0',          icon:'📊', label:'Aforo Real',        render: renderAforo3D },
+  { id:'panel-1',          icon:'🥧', label:'Composición',       render: renderComposicion3D },
+  { id:'panel-2',          icon:'🧠', label:'Variables ML',      render: renderImportancia3D },
+  { id:'panel-3',          icon:'🔢', label:'Conf. Matrix',      render: renderMatriz3D },
+  { id:'panel-prediccion', icon:'🚦', label:'Predicción',        render: renderPrediccion },
+  { id:'panel-5',          icon:'📉', label:'Probabilidades',    render: renderProb3D },
+  { id:'panel-6',          icon:'📐', label:'Antigüedad vs Carga', render: renderScatter3D },
+  { id:'panel-7',          icon:'⏱️', label:'Proj. Horaria',     render: renderProyeccion3D },
+  { id:'iso-panel',        icon:'📋', label:'ISO 25010·25020',   render: renderIsoPanel },
 ];
 
-let currentTab = 4;   
+let currentTab = 4;
 const rendered = new Set();
 
 (function buildTabs() {
@@ -673,529 +344,313 @@ function initKpis() {
 }
 
 function initPredCard() {
-  const card    = document.getElementById('pred-card');
-  const emoji   = document.getElementById('pred-emoji');
-  const verdict = document.getElementById('pred-verdict');
-  const conf    = document.getElementById('pred-conf');
-  const esal    = document.getElementById('pred-esal');
-
-  if (MODEL.pred === 1) {
-    card.classList.add('needs-repair');
-    emoji.textContent   = '⚠️';
-    verdict.textContent = 'NECESITA REPARACIÓN';
-    verdict.style.color = C.red;
-  } else {
-    card.classList.remove('needs-repair');
-    emoji.textContent   = '✅';
-    verdict.textContent = 'SIN REPARACIÓN';
-    verdict.style.color = C.green;
-  }
+  const card=document.getElementById('pred-card'), emoji=document.getElementById('pred-emoji'),
+        verdict=document.getElementById('pred-verdict'), conf=document.getElementById('pred-conf'),
+        esal=document.getElementById('pred-esal');
+  if (MODEL.pred===1) { card.classList.add('needs-repair'); emoji.textContent='⚠️'; verdict.textContent='NECESITA REPARACIÓN'; verdict.style.color=C.red; }
+  else { card.classList.remove('needs-repair'); emoji.textContent='✅'; verdict.textContent='SIN REPARACIÓN'; verdict.style.color=C.green; }
   conf.textContent = `Confianza: ${(MODEL.predConf*100).toFixed(1)}%`;
   esal.textContent = `ESAL total (30 min): ${MODEL.esalTotal.toFixed(0)}`;
 }
 
 function renderAforo3D() {
-  const labels = Object.keys(MODEL.aforo);
-  const values = Object.values(MODEL.aforo);
-  const x = labels.map((_,i)=>i);
-
-  const traces = labels.map((lbl, i) => ({
-    type: 'mesh3d',
-    x: [i-.35,i+.35,i+.35,i-.35, i-.35,i+.35,i+.35,i-.35],
-    y: [-.3,-.3,.3,.3, -.3,-.3,.3,.3],
-    z: [0,0,0,0, values[i],values[i],values[i],values[i]],
+  const labels=Object.keys(MODEL.aforo), values=Object.values(MODEL.aforo), x=labels.map((_,i)=>i);
+  const traces = labels.map((lbl,i) => ({
+    type:'mesh3d', x:[i-.35,i+.35,i+.35,i-.35,i-.35,i+.35,i+.35,i-.35], y:[-.3,-.3,.3,.3,-.3,-.3,.3,.3],
+    z:[0,0,0,0,values[i],values[i],values[i],values[i]],
     i:[7,0,0,0,4,4,6,6,4,0,3,2], j:[3,4,1,2,5,6,5,2,0,1,6,3], k:[0,7,2,3,6,7,1,1,5,5,7,6],
-    color: C.palette[i % C.palette.length],
-    opacity: 0.9,
-    name: lbl,
-    showlegend: true,
-    hovertemplate: `<b>${lbl}</b><br>Cantidad: ${values[i]}<extra></extra>`,
+    color:C.palette[i%C.palette.length], opacity:0.9, name:lbl, showlegend:true,
+    hovertemplate:`<b>${lbl}</b><br>Cantidad: ${values[i]}<extra></extra>`,
   }));
-
-  const isMobile = window.innerWidth <= 640;
+  const isMobile=window.innerWidth<=640;
   Plotly.newPlot('plot-aforo', traces, layout({
-    title: { text:'Aforo vehicular (30 min)', font:{color:C.accent,size:12} },
-    showlegend: true,
-    legend: isMobile ? { orientation: 'h', x: 0, y: -0.2, font: { size: 9 } } : { font: { size: 10 } },
-    scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { tickvals:x, ticktext:labels, tickfont:{color:C.text,size: isMobile ? 7.5 : 9} },
-      zaxis: { title:'Cantidad', tickfont:{color:C.text} },
-      yaxis: { visible:false },
-      camera: isMobile ? { eye:{x:1.3, y:-2.1, z:1.0} } : { eye:{x:1.8,y:-1.8,z:1.3} },
-    }),
+    title:{text:'Aforo vehicular (30 min)',font:{color:C.accent,size:12}}, showlegend:true,
+    legend:isMobile?{orientation:'h',x:0,y:-0.2,font:{size:9}}:{font:{size:10}},
+    scene:Object.assign({},BASE_LAYOUT.scene,{ xaxis:{tickvals:x,ticktext:labels,tickfont:{color:C.text,size:isMobile?7.5:9}}, zaxis:{title:'Cantidad',tickfont:{color:C.text}}, yaxis:{visible:false}, camera:isMobile?{eye:{x:1.3,y:-2.1,z:1.0}}:{eye:{x:1.8,y:-1.8,z:1.3}} }),
   }), CONFIG);
 }
 
 function renderComposicion3D() {
-  const labels = Object.keys(MODEL.aforo);
-  const values = Object.values(MODEL.aforo);
-
-  const trace = {
-    type: 'pie',
-    labels, values,
-    hole: 0.45,
-    marker: { colors: C.palette, line:{ color:C.bg, width:2 } },
-    textinfo: 'percent+label',
-    textfont: { color:C.text, size:10 },
-    hovertemplate: '<b>%{label}</b><br>%{value} veh<br>%{percent}<extra></extra>',
-    pull: labels.map((_,i)=> i===0?.04:0),
-    rotation: 40,
-  };
-
-  const traceOuter = {
-    type: 'pie',
-    labels, values,
-    hole: 0.65,
-    marker: { colors: C.palette.map(c=>c+'55'), line: { color:C.bg, width:1 } },
-    textinfo: 'none',
-    hoverinfo: 'skip',
-    rotation: 40,
-    showlegend: false,
-  };
-
-  Plotly.newPlot('plot-comp', [traceOuter, trace], layout({
-    title: { text:'Composición vehicular porcentual', font:{color:C.accent,size:12} },
-    showlegend: true,
-    legend: { orientation:'h', y:-0.15, font:{color:C.text,size:9} },
-    margin: { l:10, r:10, t:45, b:60 },
-    annotations: [{
-      text: `<b>${MODEL.totalVeh}</b><br>veh`,
-      showarrow: false,
-      font: { size:14, color:C.accent },
-      x:0.5, y:0.5, xanchor:'center', yanchor:'middle',
-    }],
-  }), CONFIG);
+  const labels=Object.keys(MODEL.aforo), values=Object.values(MODEL.aforo);
+  const trace={type:'pie',labels,values,hole:0.45,marker:{colors:C.palette,line:{color:C.bg,width:2}},textinfo:'percent+label',textfont:{color:C.text,size:10},hovertemplate:'<b>%{label}</b><br>%{value} veh<br>%{percent}<extra></extra>',pull:labels.map((_,i)=>i===0?.04:0),rotation:40};
+  const traceOuter={type:'pie',labels,values,hole:0.65,marker:{colors:C.palette.map(c=>c+'55'),line:{color:C.bg,width:1}},textinfo:'none',hoverinfo:'skip',rotation:40,showlegend:false};
+  Plotly.newPlot('plot-comp',[traceOuter,trace],layout({title:{text:'Composición vehicular porcentual',font:{color:C.accent,size:12}},showlegend:true,legend:{orientation:'h',y:-0.15,font:{color:C.text,size:9}},margin:{l:10,r:10,t:45,b:60},annotations:[{text:`<b>${MODEL.totalVeh}</b><br>veh`,showarrow:false,font:{size:14,color:C.accent},x:0.5,y:0.5,xanchor:'center',yanchor:'middle'}]}),CONFIG);
 }
 
 function renderImportancia3D() {
-  const entries = Object.entries(MODEL.importancias).sort((a,b)=>b[1]-a[1]);
-  const names   = entries.map(e=>e[0]);
-  const vals    = entries.map(e=>e[1]);
-  const x       = names.map((_,i)=>i);
-
-  const traces = names.map((n, i) => ({
-    type: 'mesh3d',
-    x: [i-.38,i+.38,i+.38,i-.38, i-.38,i+.38,i+.38,i-.38],
-    y: [-.25,-.25,.25,.25, -.25,-.25,.25,.25],
-    z: [0,0,0,0, vals[i],vals[i],vals[i],vals[i]],
-    i:[7,0,0,0,4,4,6,6,4,0,3,2], j:[3,4,1,2,5,6,5,2,0,1,6,3], k:[0,7,2,3,6,7,1,1,5,5,7,6],
-    color: C.palette[i],
-    opacity: 0.88,
-    name: n,
-    showlegend: true,
-    hovertemplate:`<b>${n}</b><br>Importancia: ${vals[i].toFixed(3)}<extra></extra>`,
-  }));
-
-  const isMobile = window.innerWidth <= 640;
-  Plotly.newPlot('plot-import', traces, layout({
-    title: { text:'Importancia de variables – Random Forest', font:{color:C.accent,size:12} },
-    showlegend: true,
-    legend: isMobile ? { orientation: 'h', x: 0, y: -0.2, font: { size: 9 } } : { font: { size: 10 } },
-    scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { tickvals:x, ticktext:names, tickfont:{color:C.text,size: isMobile ? 7 : 8} },
-      zaxis: { title:'Importancia', tickfont:{color:C.text} },
-      yaxis: { visible:false },
-      camera: isMobile ? { eye:{x:1.3, y:-2.1, z:1.1} } : { eye:{x:1.6,y:-1.6,z:1.4} },
-    }),
-  }), CONFIG);
+  const entries=Object.entries(MODEL.importancias).sort((a,b)=>b[1]-a[1]), names=entries.map(e=>e[0]), vals=entries.map(e=>e[1]), x=names.map((_,i)=>i);
+  const traces=names.map((n,i)=>({type:'mesh3d',x:[i-.38,i+.38,i+.38,i-.38,i-.38,i+.38,i+.38,i-.38],y:[-.25,-.25,.25,.25,-.25,-.25,.25,.25],z:[0,0,0,0,vals[i],vals[i],vals[i],vals[i]],i:[7,0,0,0,4,4,6,6,4,0,3,2],j:[3,4,1,2,5,6,5,2,0,1,6,3],k:[0,7,2,3,6,7,1,1,5,5,7,6],color:C.palette[i],opacity:0.88,name:n,showlegend:true,hovertemplate:`<b>${n}</b><br>Importancia: ${vals[i].toFixed(3)}<extra></extra>`}));
+  const isMobile=window.innerWidth<=640;
+  Plotly.newPlot('plot-import',traces,layout({title:{text:'Importancia de variables – Random Forest',font:{color:C.accent,size:12}},showlegend:true,legend:isMobile?{orientation:'h',x:0,y:-0.2,font:{size:9}}:{font:{size:10}},scene:Object.assign({},BASE_LAYOUT.scene,{xaxis:{tickvals:x,ticktext:names,tickfont:{color:C.text,size:isMobile?7:8}},zaxis:{title:'Importancia',tickfont:{color:C.text}},yaxis:{visible:false},camera:isMobile?{eye:{x:1.3,y:-2.1,z:1.1}}:{eye:{x:1.6,y:-1.6,z:1.4}}})}),CONFIG);
 }
 
 function renderMatriz3D() {
-  const cm = MODEL.confMatrix;
-  const labels3d = ['Sin rep.','Necesita rep.'];
-
-  const trace = {
-    type: 'surface',
-    z: cm,
-    x: labels3d,
-    y: labels3d,
-    colorscale: [[0, '#0d1117'], [0.3, '#0a3069'], [1, '#58a6ff']],
-    showscale: true,
-    colorbar: { tickfont:{color:C.text}, title:{text:'Cuenta',font:{color:C.text}} },
-    hovertemplate: 'Real: %{y}<br>Predicho: %{x}<br>Cuenta: %{z}<extra></extra>',
-    contours: { z: { show:true, usecolormap:true, highlightcolor:C.accent, project:{z:true} } },
-  };
-
-  const annotations3d = [];
-  for (let i=0; i<2; i++) for (let j=0; j<2; j++) {
-    annotations3d.push({
-      x:labels3d[j], y:labels3d[i], z:cm[i][j]+3,
-      text:`<b>${cm[i][j]}</b>`,
-      showarrow:false,
-      font:{color:C.text,size:14},
-      bgcolor:'rgba(22,27,34,.7)',
-    });
-  }
-
-  Plotly.newPlot('plot-matrix', [trace], layout({
-    title: { text:'Matriz de confusión – clasificador RF', font:{color:C.accent,size:12} },
-    scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { title:'Predicho', tickfont:{color:C.text} },
-      yaxis: { title:'Real',     tickfont:{color:C.text} },
-      zaxis: { title:'Cuenta',   tickfont:{color:C.text} },
-      annotations: annotations3d,
-      camera: { eye:{x:1.5,y:-1.5,z:1.6} },
-    }),
-  }), CONFIG);
+  const cm=MODEL.confMatrix, labels3d=['Sin rep.','Necesita rep.'];
+  const trace={type:'surface',z:cm,x:labels3d,y:labels3d,colorscale:[[0,'#0d1117'],[0.3,'#0a3069'],[1,'#58a6ff']],showscale:true,colorbar:{tickfont:{color:C.text},title:{text:'Cuenta',font:{color:C.text}}},hovertemplate:'Real: %{y}<br>Predicho: %{x}<br>Cuenta: %{z}<extra></extra>',contours:{z:{show:true,usecolormap:true,highlightcolor:C.accent,project:{z:true}}}};
+  const annotations3d=[];
+  for(let i=0;i<2;i++) for(let j=0;j<2;j++) annotations3d.push({x:labels3d[j],y:labels3d[i],z:cm[i][j]+3,text:`<b>${cm[i][j]}</b>`,showarrow:false,font:{color:C.text,size:14},bgcolor:'rgba(22,27,34,.7)'});
+  Plotly.newPlot('plot-matrix',[trace],layout({title:{text:'Matriz de confusión – clasificador RF',font:{color:C.accent,size:12}},scene:Object.assign({},BASE_LAYOUT.scene,{xaxis:{title:'Predicho',tickfont:{color:C.text}},yaxis:{title:'Real',tickfont:{color:C.text}},zaxis:{title:'Cuenta',tickfont:{color:C.text}},annotations:annotations3d,camera:{eye:{x:1.5,y:-1.5,z:1.6}}})}),CONFIG);
 }
 
 function renderPrediccion() {
-  const pct = MODEL.predConf * 100;
-  const color = MODEL.pred===1 ? C.red : C.green;
-  const label  = MODEL.pred===1 ? 'Necesita reparación' : 'Sin reparación';
-
-  const trace = {
-    type: 'indicator',
-    mode: 'gauge+number+delta',
-    value: pct,
-    number: { suffix:'%', font:{color:color, size:36} },
-    delta:  { reference:50, increasing:{color:C.red}, decreasing:{color:C.green} },
-    title:  { text:`<b>${label}</b>`, font:{color:color,size:14} },
-    gauge: {
-      axis: { range:[0,100], tickcolor:C.text, tickfont:{color:C.text} },
-      bar:  { color },
-      bgcolor: C.card,
-      bordercolor: color,
-      borderwidth: 2,
-      steps: [
-        { range:[0,40],   color:'rgba(63,185,80,.12)' },
-        { range:[40,70],  color:'rgba(227,179,65,.12)' },
-        { range:[70,100], color:'rgba(248,81,73,.12)' },
-      ],
-      threshold: { line:  { color:C.accent, width:3 }, thickness: 0.75, value: 50 },
-    },
-  };
-
-  Plotly.newPlot('plot-gauge', [trace], layout({
-    title: { text:'Nivel de confianza del modelo', font:{color:C.accent,size:12} },
-    margin: { l:30,r:30,t:50,b:30 },
-  }), CONFIG);
+  const pct=MODEL.predConf*100, color=MODEL.pred===1?C.red:C.green, label=MODEL.pred===1?'Necesita reparación':'Sin reparación';
+  const trace={type:'indicator',mode:'gauge+number+delta',value:pct,number:{suffix:'%',font:{color,size:36}},delta:{reference:50,increasing:{color:C.red},decreasing:{color:C.green}},title:{text:`<b>${label}</b>`,font:{color,size:14}},gauge:{axis:{range:[0,100],tickcolor:C.text,tickfont:{color:C.text}},bar:{color},bgcolor:C.card,bordercolor:color,borderwidth:2,steps:[{range:[0,40],color:'rgba(63,185,80,.12)'},{range:[40,70],color:'rgba(227,179,65,.12)'},{range:[70,100],color:'rgba(248,81,73,.12)'}],threshold:{line:{color:C.accent,width:3},thickness:0.75,value:50}}};
+  Plotly.newPlot('plot-gauge',[trace],layout({title:{text:'Nivel de confianza del modelo',font:{color:C.accent,size:12}},margin:{l:30,r:30,t:50,b:30}}),CONFIG);
 }
 
 function renderProb3D() {
-  const p0 = MODEL.probabilities[0]*100;
-  const p1 = MODEL.probabilities[1]*100;
-
-  const labels = ['Sin reparación','Necesita reparación'];
-  const colors = [C.green, C.red];
-
-  const traces = [0,1].map(i => ({
-    type: 'mesh3d',
-    x: [i-.42,i+.42,i+.42,i-.42, i-.42,i+.42,i+.42,i-.42],
-    y: [-.3,-.3,.3,.3, -.3,-.3,.3,.3],
-    z: [0,0,0,0, [p0,p1][i],[p0,p1][i],[p0,p1][i],[p0,p1][i]],
-    i:[7,0,0,0,4,4,6,6,4,0,3,2], j:[3,4,1,2,5,6,5,2,0,1,6,3], k:[0,7,2,3,6,7,1,1,5,5,7,6],
-    color: colors[i],
-    opacity: 0.9,
-    name: labels[i],
-    showlegend: true,
-    hovertemplate:`<b>${labels[i]}</b><br>${[p0,p1][i].toFixed(1)}%<extra></extra>`,
-  }));
-
-  const isMobile = window.innerWidth <= 640;
-  Plotly.newPlot('plot-prob', traces, layout({
-    title: { text:'Distribución de probabilidades del clasificador', font:{color:C.accent,size:12} },
-    showlegend: true,
-    legend: isMobile ? { orientation: 'h', x: 0, y: -0.2, font: { size: 9 } } : { font: { size: 10 } },
-    scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { tickvals:[0,1], ticktext:labels, tickfont:{color:C.text,size:9} },
-      zaxis: { title:'Probabilidad (%)', range:[0,110], tickfont:{color:C.text} },
-      yaxis: { visible:false },
-      camera: isMobile ? { eye:{x:1.3, y:-2.1, z:1.2} } : { eye:{x:1.6,y:-1.6,z:1.5} },
-    }),
-  }), CONFIG);
+  const p0=MODEL.probabilities[0]*100, p1=MODEL.probabilities[1]*100, labels=['Sin reparación','Necesita reparación'], colors=[C.green,C.red];
+  const traces=[0,1].map(i=>({type:'mesh3d',x:[i-.42,i+.42,i+.42,i-.42,i-.42,i+.42,i+.42,i-.42],y:[-.3,-.3,.3,.3,-.3,-.3,.3,.3],z:[0,0,0,0,[p0,p1][i],[p0,p1][i],[p0,p1][i],[p0,p1][i]],i:[7,0,0,0,4,4,6,6,4,0,3,2],j:[3,4,1,2,5,6,5,2,0,1,6,3],k:[0,7,2,3,6,7,1,1,5,5,7,6],color:colors[i],opacity:0.9,name:labels[i],showlegend:true,hovertemplate:`<b>${labels[i]}</b><br>${[p0,p1][i].toFixed(1)}%<extra></extra>`}));
+  const isMobile=window.innerWidth<=640;
+  Plotly.newPlot('plot-prob',traces,layout({title:{text:'Distribución de probabilidades del clasificador',font:{color:C.accent,size:12}},showlegend:true,legend:isMobile?{orientation:'h',x:0,y:-0.2,font:{size:9}}:{font:{size:10}},scene:Object.assign({},BASE_LAYOUT.scene,{xaxis:{tickvals:[0,1],ticktext:labels,tickfont:{color:C.text,size:9}},zaxis:{title:'Probabilidad (%)',range:[0,110],tickfont:{color:C.text}},yaxis:{visible:false},camera:isMobile?{eye:{x:1.3,y:-2.1,z:1.2}}:{eye:{x:1.6,y:-1.6,z:1.5}}})}),CONFIG);
 }
 
-// 📐 EXCLUSIVO SCATTER 3D: Optimización móvil de escala, descarte de colisión de títulos y cámara
 function renderScatter3D() {
-  const { esal, ant, flujo, label } = MODEL.df;
-  const ok   = label.map((_,i)=>label[i]===0);
-  const need = label.map((_,i)=>label[i]===1);
-
-  function subset(arr, mask) { return arr.filter((_,i)=>mask[i]); }
-  const isMobile = window.innerWidth <= 640;
-
-  const traceOk = {
-    type: 'scatter3d', 
-    x: subset(ant,ok), 
-    y: subset(flujo,ok), 
-    z: subset(esal,ok), 
-    mode: 'markers', 
-    name: 'Sin reparación',
-    marker: { 
-      color: C.green, 
-      size: isMobile ? 1.8 : 3, // CORREGIDO: Puntos más pequeños en móvil para que respire la visualización
-      opacity: 0.6, 
-      line: { color: 'rgba(63,185,80,.2)', width: 0.3 } 
-    },
-    hovertemplate: 'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Sin rep.</extra>',
-  };
-
-  const traceNeed = {
-    type: 'scatter3d', 
-    x: subset(ant,need), 
-    y: subset(flujo,need), 
-    z: subset(esal,need), 
-    mode: 'markers', 
-    name: 'Necesita reparación',
-    marker: { 
-      color: C.red, 
-      size: isMobile ? 1.8 : 3, // CORREGIDO: Reducción simétrica de tamaño de punto en celulares
-      opacity: 0.6, 
-      line: { color: 'rgba(248,81,73,.2)', width: 0.3 } 
-    },
-    hovertemplate: 'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Necesita rep.</extra>',
-  };
-
-  Plotly.newPlot('plot-scatter', [traceOk, traceNeed], layout({
-    // CORREGIDO: Removemos el title de Plotly en móvil para eliminar la colisión con la barra de herramientas flotante
-    title: isMobile ? null : { text: 'Dataset de entrenamiento: Antigüedad / Flujo / ESAL', font: { color: C.accent, size: 11 } },
-    showlegend: true,
-    legend: isMobile ? { orientation: 'h', x: 0, y: -0.15, font: { size: 9 } } : { font: { size: 10 } },
-    scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { title: 'Antigüedad (años)', tickfont: { color: C.text, size: isMobile ? 8 : 10 } },
-      yaxis: { title: 'Flujo horario',     tickfont: { color: C.text, size: isMobile ? 8 : 10 } },
-      zaxis: { title: 'ESAL equiv.',       tickfont: { color: C.text, size: isMobile ? 8 : 10 } },
-      // CORREGIDO: Cámara con mayor retroceso y altura en celulares para evitar que se corten los nombres de los ejes
-      camera: isMobile ? { eye: { x: 1.45, y: -1.95, z: 1.15 } } : { eye: { x: 1.6, y: -1.6, z: 1.2 } },
-    }),
-  }), CONFIG);
+  const {esal,ant,flujo,label}=MODEL.df;
+  const ok=label.map((_,i)=>label[i]===0), need=label.map((_,i)=>label[i]===1);
+  function subset(arr,mask){return arr.filter((_,i)=>mask[i]);}
+  const isMobile=window.innerWidth<=640;
+  const traceOk={type:'scatter3d',x:subset(ant,ok),y:subset(flujo,ok),z:subset(esal,ok),mode:'markers',name:'Sin reparación',marker:{color:C.green,size:isMobile?1.8:3,opacity:0.6,line:{color:'rgba(63,185,80,.2)',width:0.3}},hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Sin rep.</extra>'};
+  const traceNeed={type:'scatter3d',x:subset(ant,need),y:subset(flujo,need),z:subset(esal,need),mode:'markers',name:'Necesita reparación',marker:{color:C.red,size:isMobile?1.8:3,opacity:0.6,line:{color:'rgba(248,81,73,.2)',width:0.3}},hovertemplate:'Antigüedad: %{x:.1f} años<br>Flujo: %{y:.0f}<br>ESAL: %{z:.1f}<extra>Necesita rep.</extra>'};
+  Plotly.newPlot('plot-scatter',[traceOk,traceNeed],layout({title:isMobile?null:{text:'Dataset de entrenamiento: Antigüedad / Flujo / ESAL',font:{color:C.accent,size:11}},showlegend:true,legend:isMobile?{orientation:'h',x:0,y:-0.15,font:{size:9}}:{font:{size:10}},scene:Object.assign({},BASE_LAYOUT.scene,{xaxis:{title:'Antigüedad (años)',tickfont:{color:C.text,size:isMobile?8:10}},yaxis:{title:'Flujo horario',tickfont:{color:C.text,size:isMobile?8:10}},zaxis:{title:'ESAL equiv.',tickfont:{color:C.text,size:isMobile?8:10}},camera:isMobile?{eye:{x:1.45,y:-1.95,z:1.15}}:{eye:{x:1.6,y:-1.6,z:1.2}}})}),CONFIG);
 }
 
 function renderProyeccion3D() {
-  const horas = Array.from({length:24}, (_,i)=>i);
-  const dias  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  const base  = MODEL.totalVeh * 2;
-
-  const z = dias.map((_, d) => {
-    const wFactor = d < 5 ? 1.0 : d===5 ? 0.75 : 0.55;
-    return horas.map(h => base * wFactor * (0.3 + 0.7 * Math.exp(-((h-7.5)**2) / 4) + 0.5 * Math.exp(-((h-17.5)**2) / 5)));
-  });
-
-  const trace = {
-    type: 'surface', x: horas, y: dias, z: z,
-    colorscale: [[0, C.bg], [0.3, '#0a3069'], [0.6, '#1f6feb'], [0.85,'#58a6ff'], [1, '#ea4335']],
-    showscale: true,
-    colorbar: { tickfont:{color:C.text}, title:{text:'Veh/h',font:{color:C.text}} },
-    contours: { z: { show:true, usecolormap:true, highlightcolor:'#fff', project:{z:false} } }, opacity: 0.92,
-    hovertemplate: 'Hora: %{x}h<br>Día: %{y}<br>Flujo: %{z:.0f} veh/h<extra></extra>',
-  };
-
-  const threshold = base * 0.8;
-  const threshTrace = {
-    type: 'scatter3d', x: horas, y: horas.map(()=>'Vie'), z: horas.map(()=>threshold),
-    mode: 'lines', line: { color:C.red, width:4, dash:'dash' }, name: 'Umbral crítico',
-  };
-
-  Plotly.newPlot('plot-hora', [trace, threshTrace], layout({
-    title: { text:'Proyección horaria del flujo vehicular (7 días)', font:{color:C.accent,size:12} },
-    scene: Object.assign({}, BASE_LAYOUT.scene, {
-      xaxis: { title:'Hora del día', tickfont:{color:C.text} },
-      yaxis: { title:'Día semana',   tickfont:{color:C.text} },
-      zaxis: { title:'Veh/hora',     tickfont:{color:C.text} },
-      camera: { eye:{x:1.7,y:-1.7,z:1.4} },
-    }),
-  }), CONFIG);
+  const horas=Array.from({length:24},(_,i)=>i), dias=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'], base=MODEL.totalVeh*2;
+  const z=dias.map((_,d)=>{const wFactor=d<5?1.0:d===5?0.75:0.55; return horas.map(h=>base*wFactor*(0.3+0.7*Math.exp(-((h-7.5)**2)/4)+0.5*Math.exp(-((h-17.5)**2)/5)));});
+  const trace={type:'surface',x:horas,y:dias,z,colorscale:[[0,C.bg],[0.3,'#0a3069'],[0.6,'#1f6feb'],[0.85,'#58a6ff'],[1,'#ea4335']],showscale:true,colorbar:{tickfont:{color:C.text},title:{text:'Veh/h',font:{color:C.text}}},contours:{z:{show:true,usecolormap:true,highlightcolor:'#fff',project:{z:false}}},opacity:0.92,hovertemplate:'Hora: %{x}h<br>Día: %{y}<br>Flujo: %{z:.0f} veh/h<extra></extra>'};
+  const threshTrace={type:'scatter3d',x:horas,y:horas.map(()=>'Vie'),z:horas.map(()=>base*0.8),mode:'lines',line:{color:C.red,width:4,dash:'dash'},name:'Umbral crítico'};
+  Plotly.newPlot('plot-hora',[trace,threshTrace],layout({title:{text:'Proyección horaria del flujo vehicular (7 días)',font:{color:C.accent,size:12}},scene:Object.assign({},BASE_LAYOUT.scene,{xaxis:{title:'Hora del día',tickfont:{color:C.text}},yaxis:{title:'Día semana',tickfont:{color:C.text}},zaxis:{title:'Veh/hora',tickfont:{color:C.text}},camera:{eye:{x:1.7,y:-1.7,z:1.4}}})}),CONFIG);
 }
 
 function renderIsoPanel() {
-  const panel = document.getElementById('iso-panel');
-
-  const metrics25020 = [
-    { metric:'Precisión del clasificador',  formula:'(TP+TN)/(TP+TN+FP+FN)', value:'84.8%',  ref:'ISO 25023' },
-    { metric:'Recall (sensibilidad)',        formula:'TP/(TP+FN)',             value:'84.9%',  ref:'ISO 25023' },
-    { metric:'F1-Score',                    formula:'2·P·R/(P+R)',            value:'84.7%',  ref:'ISO 25023' },
-    { metric:'Confianza de predicción',     formula:'max(P(y=0),P(y=1))',     value:(MODEL.predConf*100).toFixed(1)+'%', ref:'ISO 25020' },
-    { metric:'Cobertura del dataset',       formula:'N_train/N_total',        value:'75%',    ref:'ISO 25020' },
-    { metric:'Aforo vehicular capturado',   formula:'Σ veh contados',        value:MODEL.totalVeh, ref:'ISO 25020' },
-    { metric:'ESAL equivalente total',      formula:'Σ(N_i × FE_i)',         value:MODEL.esalTotal.toFixed(1), ref:'ISO 25020' },
+  const panel=document.getElementById('iso-panel');
+  const metrics25020=[
+    {metric:'Precisión del clasificador',formula:'(TP+TN)/(TP+TN+FP+FN)',value:'84.8%',ref:'ISO 25023'},
+    {metric:'Recall (sensibilidad)',formula:'TP/(TP+FN)',value:'84.9%',ref:'ISO 25023'},
+    {metric:'F1-Score',formula:'2·P·R/(P+R)',value:'84.7%',ref:'ISO 25023'},
+    {metric:'Confianza de predicción',formula:'max(P(y=0),P(y=1))',value:(MODEL.predConf*100).toFixed(1)+'%',ref:'ISO 25020'},
+    {metric:'Cobertura del dataset',formula:'N_train/N_total',value:'75%',ref:'ISO 25020'},
+    {metric:'Aforo vehicular capturado',formula:'Σ veh contados',value:MODEL.totalVeh,ref:'ISO 25020'},
+    {metric:'ESAL equivalente total',formula:'Σ(N_i × FE_i)',value:MODEL.esalTotal.toFixed(1),ref:'ISO 25020'},
   ];
-
-  const chars25010 = [
-    { char:'Funcionalidad',    desc:'8 gráficas con datos reales y modelo ML completo',         status:'✅' },
-    { char:'Fiabilidad',       desc:'Manejo de errores en renderizado; datos validados',         status:'✅' },
-    { char:'Usabilidad',       desc:'WCAG AA, ARIA roles, navegación teclado/táctil',           status:'✅' },
-    { char:'Eficiencia',       desc:'Renderizado diferido (lazy render) por pestaña activa',    status:'✅' },
-    { char:'Mantenibilidad',   desc:'Arquitectura MVC, variables CSS, funciones puras',         status:'✅' },
-    { char:'Portabilidad',     desc:'Responsive mobile/tablet/desktop, sin dependencias nativas',status:'✅' },
-    { char:'Seguridad',        desc:'Sin eval(), sin innerHTML con datos externos',              status:'✅' },
-    { char:'Compatibilidad',   desc:'Plotly CDN estable, estándares HTML5/CSS3',                status:'✅' },
+  const chars25010=[
+    {char:'Funcionalidad',desc:'8 gráficas con datos reales y modelo ML completo',status:'✅'},
+    {char:'Fiabilidad',desc:'Manejo de errores en renderizado; datos validados',status:'✅'},
+    {char:'Usabilidad',desc:'WCAG AA, ARIA roles, navegación teclado/táctil',status:'✅'},
+    {char:'Eficiencia',desc:'Renderizado diferido (lazy render) por pestaña activa',status:'✅'},
+    {char:'Mantenibilidad',desc:'Arquitectura MVC, variables CSS, funciones puras',status:'✅'},
+    {char:'Portabilidad',desc:'Responsive mobile/tablet/desktop, sin dependencias nativas',status:'✅'},
+    {char:'Seguridad',desc:'Sin eval(), sin innerHTML con datos externos',status:'✅'},
+    {char:'Compatibilidad',desc:'Plotly CDN estable, estándares HTML5/CSS3',status:'✅'},
   ];
-
-  panel.innerHTML = `
+  panel.innerHTML=`
     <div class="iso-section">
       <h3>📐 ISO/IEC 25010 – Características de Calidad del Producto</h3>
-      <table class="iso-table">
-        <thead>
-          <tr>
-            <th>Característica</th>
-            <th>Implementación</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${chars25010.map(r=>`
-            <tr>
-              <td><span class="tag-ok">${r.char}</span></td>
-              <td>${r.desc}</td>
-              <td>${r.status}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+      <table class="iso-table"><thead><tr><th>Característica</th><th>Implementación</th><th>Estado</th></tr></thead><tbody>
+      ${chars25010.map(r=>`<tr><td><span class="tag-ok">${r.char}</span></td><td>${r.desc}</td><td>${r.status}</td></tr>`).join('')}
+      </tbody></table>
     </div>
     <div class="iso-section">
       <h3>📏 ISO/IEC 25020 – Métricas de Calidad Medibles</h3>
-      <table class="iso-table">
-        <thead>
-          <tr>
-            <th>Métrica</th>
-            <th>Fórmula</th>
-            <th>Valor</th>
-            <th>Normal</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${metrics25020.map(r=>`
-            <tr>
-              <td>${r.metric}</td>
-              <td style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${r.formula}</td>
-              <td><b style="color:var(--accent)">${r.value}</b></td>
-              <td><span class="tag-ok">${r.ref}</span></td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+      <table class="iso-table"><thead><tr><th>Métrica</th><th>Fórmula</th><th>Valor</th><th>Norma</th></tr></thead><tbody>
+      ${metrics25020.map(r=>`<tr><td>${r.metric}</td><td style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted)">${r.formula}</td><td><b style="color:var(--accent)">${r.value}</b></td><td><span class="tag-ok">${r.ref}</span></td></tr>`).join('')}
+      </tbody></table>
     </div>
     <div class="iso-section">
       <h3>🗂️ Trazabilidad de Datos – ISO 25020</h3>
-      <table class="iso-table">
-        <thead>
-          <tr>
-            <th>Fuente</th>
-            <th>Descripción</th>
-            <th>Cantidad</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Aforo real</td>
-            <td>Conteo vehicular 30 min · Av. Blanco Galindo</td>
-            <td><b>${MODEL.totalVeh} veh</b></td>
-          </tr>
-          <tr>
-            <td>Dataset sintético</td>
-            <td>Generado con semilla=42, distribución uniforme</td>
-            <td><b>500 muestras</b></td>
-          </tr>
-          <tr>
-            <td>Variables de entrada</td>
-            <td>ESAL, antigüedad, lluvia, temperatura, flujo</td>
-            <td><b>5 features</b></td>
-          </tr>
-          <tr>
-            <td>Modelo ML</td>
-            <td>Random Forest Classifier (150 árboles, max_depth=8)</td>
-            <td><b>class_weight=balanced</b></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `;
+      <table class="iso-table"><thead><tr><th>Fuente</th><th>Descripción</th><th>Cantidad</th></tr></thead><tbody>
+      <tr><td>Aforo real</td><td>Conteo vehicular 30 min · Av. Blanco Galindo</td><td><b>${MODEL.totalVeh} veh</b></td></tr>
+      <tr><td>Dataset sintético</td><td>Generado con semilla=42, distribución uniforme</td><td><b>500 muestras</b></td></tr>
+      <tr><td>Variables de entrada</td><td>ESAL, antigüedad, lluvia, temperatura, flujo</td><td><b>5 features</b></td></tr>
+      <tr><td>Modelo ML</td><td>Random Forest Classifier (150 árboles, max_depth=8)</td><td><b>class_weight=balanced</b></td></tr>
+      </tbody></table>
+    </div>`;
 }
 
 function goTo(idx) {
-  const prev = TABS[currentTab];
-  const next = TABS[idx];
-
+  const prev=TABS[currentTab], next=TABS[idx];
   document.getElementById(prev.id).classList.remove('active');
   document.querySelectorAll('.tab-btn')[currentTab].classList.remove('active');
   document.querySelectorAll('.tab-btn')[currentTab].setAttribute('aria-selected','false');
-
-  currentTab = idx;
-
+  currentTab=idx;
   document.getElementById(next.id).classList.add('active');
-  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabBtns=document.querySelectorAll('.tab-btn');
   tabBtns[idx].classList.add('active');
   tabBtns[idx].setAttribute('aria-selected','true');
-  tabBtns[idx].scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' });
-
-  document.getElementById('pos-indicator').textContent = `Gráfica ${idx+1} de ${TABS.length} · ${next.icon} ${next.label}`;
-
-  if (!rendered.has(idx)) {
-    rendered.add(idx);
-    next.render();
-  } else {
-    const el = document.getElementById(next.id).querySelector('.plotly-container');
+  tabBtns[idx].scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
+  document.getElementById('pos-indicator').textContent=`Gráfica ${idx+1} de ${TABS.length} · ${next.icon} ${next.label}`;
+  if (!rendered.has(idx)) { rendered.add(idx); next.render(); }
+  else {
+    const el=document.getElementById(next.id).querySelector('.plotly-container');
     if (el && el.querySelector('.plot-container')) Plotly.Plots.resize(el);
   }
 }
 
-document.getElementById('btn-prev').addEventListener('click', () => goTo((currentTab - 1 + TABS.length) % TABS.length));
-document.getElementById('btn-next').addEventListener('click', () => goTo((currentTab + 1) % TABS.length));
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo((currentTab + 1) % TABS.length);
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo((currentTab - 1 + TABS.length) % TABS.length);
+document.getElementById('btn-prev').addEventListener('click',()=>goTo((currentTab-1+TABS.length)%TABS.length));
+document.getElementById('btn-next').addEventListener('click',()=>goTo((currentTab+1)%TABS.length));
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') goTo((currentTab+1)%TABS.length);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') goTo((currentTab-1+TABS.length)%TABS.length);
 });
+let touchStartX=0;
+document.getElementById('chart-area').addEventListener('touchstart',e=>{touchStartX=e.changedTouches[0].clientX;},{passive:true});
+document.getElementById('chart-area').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-touchStartX;
+  if(Math.abs(dx)>50){if(dx<0)goTo((currentTab+1)%TABS.length);else goTo((currentTab-1+TABS.length)%TABS.length);}
+},{passive:true});
 
-let touchStartX = 0;
-document.getElementById('chart-area').addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].clientX; }, { passive:true });
-document.getElementById('chart-area').addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(dx) > 50) {
-    if (dx < 0) goTo((currentTab + 1) % TABS.length);
-    else        goTo((currentTab - 1 + TABS.length) % TABS.length);
-  }
-}, { passive:true });
-
-/* ── Controladores de Multi-Exportación ───────────────────────── */
-document.getElementById('btn-excel').addEventListener('click', () => {
-  let csvRows = [];
-  csvRows.push('--- REPORTE DE EVALUACION VIAL DE PAVIMENTO (THROUGH VERCEL) ---');
+/* ── Excel Export ───────────────────────── */
+document.getElementById('btn-excel').addEventListener('click',()=>{
+  let csvRows=[];
+  csvRows.push('--- REPORTE DE EVALUACION VIAL DE PAVIMENTO ---');
   csvRows.push('Ubicacion;Av. Blanco Galindo - Cochabamba, Bolivia');
   csvRows.push(`Total Vehiculos Contados (30 min);${MODEL.totalVeh}`);
   csvRows.push(`ESAL Equivalente Acumulado;${MODEL.esalTotal.toFixed(2)}`);
-  csvRows.push(`Resultado de Prediccion;${MODEL.pred === 1 ? 'NECESITA REPARACION' : 'SIN REPARACION'}`);
-  csvRows.push(`Confianza de Clasificacion;${(MODEL.predConf * 100).toFixed(1)}%`);
+  csvRows.push(`Resultado de Prediccion;${MODEL.pred===1?'NECESITA REPARACION':'SIN REPARACION'}`);
+  csvRows.push(`Confianza de Clasificacion;${(MODEL.predConf*100).toFixed(1)}%`);
   csvRows.push('');
-
   csvRows.push('--- DETALLE DE AFORO VEHICULAR ---');
   csvRows.push('Tipo de Vehiculo;Cantidad Contada;Factor ESAL');
-  Object.keys(MODEL.aforo).forEach(k => {
-    csvRows.push(`${k};${MODEL.aforo[k]};${MODEL.esalFactors[k] || 0}`);
-  });
+  Object.keys(MODEL.aforo).forEach(k=>csvRows.push(`${k};${MODEL.aforo[k]};${MODEL.esalFactors[k]||0}`));
   csvRows.push('');
-
-  csvRows.push('--- DATASET SINTETICO DE ENTRENAMIENTO (MUESTRAS) ---');
+  csvRows.push('--- DATASET SINTETICO DE ENTRENAMIENTO (100 muestras) ---');
   csvRows.push('Muestra;ESAL Equivalente;Antiguedad (Anos);Flujo Vehicular;Estatus Pavimento');
-  const d = MODEL.df;
-  for (let i = 0; i < Math.min(d.esal.length, 100); i++) {
-    csvRows.push(`${i+1};${d.esal[i].toFixed(2)};${d.ant[i].toFixed(1)};${d.flujo[i].toFixed(0)};${d.label[i] === 1 ? 'Defectuoso' : 'Optimo'}`);
-  }
-
-  const csvContent = '\uFEFF' + csvRows.join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `xvial_reporte_pavimento.csv`;
-  a.click();
+  const d=MODEL.df;
+  for(let i=0;i<Math.min(d.esal.length,100);i++) csvRows.push(`${i+1};${d.esal[i].toFixed(2)};${d.ant[i].toFixed(1)};${d.flujo[i].toFixed(0)};${d.label[i]===1?'Defectuoso':'Optimo'}`);
+  const blob=new Blob(['\uFEFF'+csvRows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='xvial_reporte_pavimento.csv'; a.click();
 });
 
-document.getElementById('btn-pdf').addEventListener('click', () => {
-  window.print();
+/* ── PDF Export — usa html2canvas + jsPDF ─────────────────────── */
+function showToast(msg, duration=2500) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+document.getElementById('btn-pdf').addEventListener('click', async () => {
+  const tab = TABS[currentTab];
+  const { jsPDF } = window.jspdf;
+  const filename = `xvial_${tab.label.replace(/\s+/g,'_').replace(/[·°]/g,'').toLowerCase()}.pdf`;
+
+  showToast('⏳ Generando PDF…', 8000);
+
+  try {
+    // ── Caso 1: pestaña ISO (HTML puro, sin canvas Plotly) ──
+    if (tab.id === 'iso-panel') {
+      const panel = document.getElementById('iso-panel');
+      const canvas = await html2canvas(panel, {
+        backgroundColor: '#161b22',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgH = (canvas.height * pageW) / canvas.width;
+      let posY = 0;
+      // paginar si la imagen es más alta que una página
+      while (posY < imgH) {
+        if (posY > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -posY, pageW, imgH);
+        posY += pageH;
+      }
+      pdf.save(filename);
+      showToast('✅ PDF guardado');
+      return;
+    }
+
+    // ── Caso 2: panel predicción (HTML + Plotly mezclado) ──
+    if (tab.id === 'panel-prediccion') {
+      const panel = document.getElementById('panel-prediccion');
+      const canvas = await html2canvas(panel, {
+        backgroundColor: '#0d1117',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(pageW / canvas.width, pageH / canvas.height);
+      const imgW = canvas.width * ratio;
+      const imgH = canvas.height * ratio;
+      pdf.addImage(imgData, 'PNG', (pageW-imgW)/2, (pageH-imgH)/2, imgW, imgH);
+      pdf.save(filename);
+      showToast('✅ PDF guardado');
+      return;
+    }
+
+    // ── Caso 3: gráficas Plotly — exportar via toImage PNG → PDF ──
+    const plotContainer = document.getElementById(tab.id).querySelector('.plotly-container');
+    if (!plotContainer || !plotContainer.querySelector('.plot-container')) {
+      showToast('⚠️ Gráfica aún no renderizada');
+      return;
+    }
+
+    // Plotly.toImage devuelve dataURL PNG de alta resolución sin necesitar html2canvas
+    const imgData = await Plotly.toImage(plotContainer, {
+      format: 'png',
+      width: 1400,
+      height: 900,
+      scale: 2,
+    });
+
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+
+    // Cabecera del reporte
+    pdf.setFillColor(13, 17, 23);
+    pdf.rect(0, 0, pageW, pageH, 'F');
+    pdf.setTextColor(88, 166, 255);
+    pdf.setFontSize(13);
+    pdf.setFont('helvetica','bold');
+    pdf.text('XVial – Predicción de Pavimento', 10, 10);
+    pdf.setTextColor(139, 148, 158);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica','normal');
+    pdf.text(`${tab.icon} ${tab.label}  ·  Av. Blanco Galindo, Cochabamba  ·  ${new Date().toLocaleString('es-BO')}`, 10, 16);
+    pdf.setDrawColor(48, 54, 61);
+    pdf.line(10, 18, pageW-10, 18);
+
+    // Imagen de la gráfica centrada bajo la cabecera
+    const maxW = pageW - 20;
+    const maxH = pageH - 28;
+    const imgAspect = 1400 / 900;
+    let drawW = maxW, drawH = maxW / imgAspect;
+    if (drawH > maxH) { drawH = maxH; drawW = maxH * imgAspect; }
+    const offsetX = (pageW - drawW) / 2;
+    pdf.addImage(imgData, 'PNG', offsetX, 22, drawW, drawH);
+
+    // Pie de página
+    pdf.setTextColor(88, 166, 255);
+    pdf.setFontSize(7);
+    pdf.text(`XVial · ISO 25010/25020 · KPIs: Veh=${MODEL.totalVeh} · ESAL=${MODEL.esalTotal.toFixed(0)} · Confianza=${(MODEL.predConf*100).toFixed(1)}%`, 10, pageH - 4);
+
+    pdf.save(filename);
+    showToast('✅ PDF guardado');
+
+  } catch (err) {
+    console.error('[XVial] Error exportando PDF:', err);
+    showToast('❌ Error al generar PDF');
+  }
 });
 
 let resizeTimer;
-window.addEventListener('resize', () => {
+window.addEventListener('resize',()=>{
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    TABS.forEach((t, i) => {
-      if (!rendered.has(i)) return;
-      const el = document.getElementById(t.id).querySelector('.plotly-container');
-      if (el && el.querySelector('.plot-container')) Plotly.Plots.resize(el);
+  resizeTimer=setTimeout(()=>{
+    TABS.forEach((t,i)=>{
+      if(!rendered.has(i)) return;
+      const el=document.getElementById(t.id).querySelector('.plotly-container');
+      if(el && el.querySelector('.plot-container')) Plotly.Plots.resize(el);
     });
-  }, 150);
+  },150);
 });
 
 (async function boot() {
@@ -1206,8 +661,7 @@ window.addEventListener('resize', () => {
 function init() {
   initKpis();
   initPredCard();
-
-  document.getElementById('pos-indicator').textContent = `Gráfica ${currentTab+1} de ${TABS.length} · ${TABS[currentTab].icon} ${TABS[currentTab].label}`;
+  document.getElementById('pos-indicator').textContent=`Gráfica ${currentTab+1} de ${TABS.length} · ${TABS[currentTab].icon} ${TABS[currentTab].label}`;
   document.getElementById(TABS[currentTab].id).classList.add('active');
   rendered.add(currentTab);
   TABS[currentTab].render();
