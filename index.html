@@ -7,11 +7,9 @@
 <meta name="theme-color" content="#0d1117">
 <title>XVial – Predicción de Pavimento</title>
 
-<!-- ISO 25010: Portabilidad / Usabilidad – Google Fonts para tipografía clara -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-<!-- Plotly para gráficos 3D interactivos -->
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 
 <style>
@@ -24,7 +22,7 @@
   --card:     #161b22;
   --border:   #30363d;
   --text:     #e6edf3;
-  --muted:    #8b949e; /* CORREGIDO: Soluciona el color gris atenuado en los textos secundarios */
+  --muted:    #8b949e;
   --accent:   #58a6ff;
   --green:    #3fb950;
   --red:      #f85149;
@@ -307,12 +305,26 @@ nav {
   flex-shrink: 0;
 }
 .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
-.nav-btn.export-btn {
+
+/* CONTENEDOR MULTI-EXPORTACIÓN REORGANIZADO */
+.export-group {
+  position: relative;
+  display: flex;
+  gap: .35rem;
+}
+.nav-btn.export-excel {
   background: rgba(63,185,80,.12);
   border-color: var(--green);
   color: var(--green);
 }
-.nav-btn.export-btn:hover { background: rgba(63,185,80,.22); }
+.nav-btn.export-excel:hover { background: rgba(63,185,80,.22); }
+
+.nav-btn.export-pdf {
+  background: rgba(227,179,65,.12);
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+.nav-btn.export-pdf:hover { background: rgba(227,179,65,.22); }
 
 #pos-indicator {
   font-family: var(--font-mono);
@@ -322,57 +334,7 @@ nav {
   flex: 1;
 }
 
-/* ══════════════════════ ISO PANEL ════════════════════════════════ */
-#iso-panel {
-  display: none;
-  height: 100%;
-  padding: .75rem;
-  overflow-y: auto;
-  animation: fadeSlide .25s ease;
-  gap: .6rem;
-  flex-direction: column;
-}
-#iso-panel.active { display: flex; }
-
-.iso-section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: .75rem 1rem;
-}
-.iso-section h3 {
-  font-family: var(--font-mono);
-  font-size: .78rem;
-  color: var(--accent);
-  margin-bottom: .5rem;
-}
-.iso-table { width: 100%; border-collapse: collapse; font-size: .72rem; }
-.iso-table th {
-  text-align: left;
-  color: var(--muted);
-  font-weight: 600;
-  padding: .3rem .5rem;
-  border-bottom: 1px solid var(--border);
-}
-.iso-table td {
-  padding: .3rem .5rem;
-  border-bottom: 1px solid rgba(48,54,61,.5);
-  vertical-align: top;
-}
-.iso-table tr:last-child td { border-bottom: none; }
-.tag-ok {
-  display: inline-block;
-  background: rgba(63,185,80,.15);
-  border: 1px solid var(--green);
-  color: var(--green);
-  border-radius: 4px;
-  padding: .1rem .4rem;
-  font-size: .65rem;
-  font-family: var(--font-mono);
-}
-
 /* ══════════════════════ RESPONSIVE ══════════════════════════════ */
-/* Mobile ≤ 640px */
 @media (max-width: 640px) {
   :root {
     --header-h: 56px;
@@ -386,25 +348,24 @@ nav {
   #panel-prediccion { padding: .5rem; }
 }
 
-/* Tablet 641–1024px */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .logo-sub { max-width: 180px; }
-}
+@media (min-width: 641px) and (max-width: 1024px) { .logo-sub { max-width: 180px; } }
+@media (min-width: 1025px) { #panel-prediccion { grid-template-columns: 340px 1fr; grid-template-rows: 1fr; } .pred-main-card { gap: .75rem; } }
+@media (max-width: 1024px) { #panel-prediccion { grid-template-rows: auto 1fr; grid-template-columns: 1fr; } }
 
-/* Desktop ≥ 1025px: layout de predicción en 2 columnas */
-@media (min-width: 1025px) {
-  #panel-prediccion {
-    grid-template-columns: 340px 1fr;
-    grid-template-rows: 1fr;
+/* ══════════════════════ HOJA DE ESTILOS DE IMPRESIÓN (PDF) ══════════════════════ */
+@media print {
+  body, #app, #chart-area, .chart-panel.active, #panel-prediccion.active {
+    background: #fff !important;
+    color: #000 !important;
+    display: block !important;
+    height: auto !important;
   }
-  .pred-main-card { gap: .75rem; }
-}
-
-/* Mobile/Tablet: predicción en 2 filas */
-@media (max-width: 1024px) {
-  #panel-prediccion {
-    grid-template-rows: auto 1fr;
-    grid-template-columns: 1fr;
+  header, #tabs-bar, nav, .chart-title { display: none !important; }
+  .plotly-container, .pred-gauge-wrap, .pred-main-card {
+    border: 1px solid #ccc !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
   }
 }
 </style>
@@ -413,7 +374,6 @@ nav {
 
 <div id="app">
 
-  <!-- ══ HEADER ══════════════════════════════════════════════════ -->
   <header role="banner">
     <div class="logo">
       <span class="logo-name">XVial</span>
@@ -427,37 +387,30 @@ nav {
     <span class="iso-badge" title="ISO/IEC 25010 + 25020 Compliant">ISO 25010 · 25020</span>
   </header>
 
-  <!-- ══ TABS ════════════════════════════════════════════════════ -->
   <div id="tabs-bar" role="tablist" aria-label="Navegación de gráficas"></div>
 
-  <!-- ══ CHART AREA ══════════════════════════════════════════════ -->
   <main id="chart-area" role="main" aria-live="polite">
 
-    <!-- Panel 0: Aforo 3D -->
     <section class="chart-panel" id="panel-0" role="tabpanel">
       <div class="chart-title">📊 Aforo Real — Av. Blanco Galindo (barras 3D)</div>
       <div class="plotly-container" id="plot-aforo"></div>
     </section>
 
-    <!-- Panel 1: Composición 3D -->
     <section class="chart-panel" id="panel-1" role="tabpanel">
       <div class="chart-title">🥧 Composición Vehicular (%) — gráfico 3D de dona</div>
       <div class="plotly-container" id="plot-comp"></div>
     </section>
 
-    <!-- Panel 2: Importancia de Variables 3D -->
     <section class="chart-panel" id="panel-2" role="tabpanel">
       <div class="chart-title">🧠 Importancia de Variables — Random Forest 3D</div>
       <div class="plotly-container" id="plot-import"></div>
     </section>
 
-    <!-- Panel 3: Matriz de Confusión 3D -->
     <section class="chart-panel" id="panel-3" role="tabpanel">
       <div class="chart-title">🔢 Matriz de Confusión — superficie 3D</div>
       <div class="plotly-container" id="plot-matrix"></div>
     </section>
 
-    <!-- Panel 4: Predicción Principal -->
     <div id="panel-prediccion" role="tabpanel">
       <div class="pred-main-card" id="pred-card">
         <div style="font-size:clamp(2rem,6vw,3.5rem)" id="pred-emoji">✅</div>
@@ -469,34 +422,32 @@ nav {
       <div class="pred-gauge-wrap" id="plot-gauge"></div>
     </div>
 
-    <!-- Panel 5: Probabilidades 3D -->
     <section class="chart-panel" id="panel-5" role="tabpanel">
       <div class="chart-title">📉 Distribución de Probabilidades 3D</div>
       <div class="plotly-container" id="plot-prob"></div>
     </section>
 
-    <!-- Panel 6: Antigüedad vs Carga 3D -->
     <section class="chart-panel" id="panel-6" role="tabpanel">
       <div class="chart-title">📐 Antigüedad vs Carga de Tráfico — scatter 3D</div>
       <div class="plotly-container" id="plot-scatter"></div>
     </section>
 
-    <!-- Panel 7: Proyección Horaria 3D -->
     <section class="chart-panel" id="panel-7" role="tabpanel">
       <div class="chart-title">⏱️ Proyección Horaria del Flujo — superficie 3D</div>
       <div class="plotly-container" id="plot-hora"></div>
     </section>
 
-    <!-- Panel 8: ISO Compliance -->
     <div id="iso-panel" role="tabpanel"></div>
 
   </main>
 
-  <!-- ══ NAV BAR ═════════════════════════════════════════════════ -->
   <nav role="navigation" aria-label="Navegación de gráficas">
     <button class="nav-btn" id="btn-prev" aria-label="Gráfica anterior">◀ Anterior</button>
     <span id="pos-indicator">—</span>
-    <button class="nav-btn export-btn" id="btn-export" aria-label="Exportar PNG">⬇ Exportar</button>
+    <div class="export-group">
+      <button class="nav-btn export-excel" id="btn-excel" aria-label="Exportar a Excel">📊 Excel</button>
+      <button class="nav-btn export-pdf" id="btn-pdf" aria-label="Exportar a PDF">📄 PDF</button>
+    </div>
     <button class="nav-btn" id="btn-next" aria-label="Gráfica siguiente">Siguiente ▶</button>
   </nav>
 
@@ -512,11 +463,9 @@ async function loadServerData() {
     const r = await fetch('/data.json', { cache: 'no-store' });
     if (r.ok) {
       _serverData = await r.json();
-      // CORREGIDO: Cambiado de print() a console.info() para evitar que se abra el gestor de impresión nativo de Android
       console.info('[XVial] Datos dinámicos cargados correctamente del backend en Python.');
     }
   } catch (_) {
-    // CORREGIDO: Redireccionado de forma segura a la consola del navegador
     console.info('[XVial] API de Python fuera de línea – usando fallback matemático local.');
   }
 }
@@ -610,7 +559,7 @@ const BASE_LAYOUT = {
   paper_bgcolor: C.card,
   plot_bgcolor:  C.card,
   font:  { color: C.text, family: "'DM Sans', sans-serif", size: 11 },
-  margin: { l:10, r:10, t:35, b:10 }, // OPTIMIZADO PARA MÓVIL: Reajusta los contenedores fijos de Plotly
+  margin: { l:10, r:10, t:35, b:10 },
   legend: { bgcolor: C.bg, bordercolor: '#30363d', borderwidth:1 },
   colorway: C.palette,
   scene: {
@@ -1062,12 +1011,50 @@ document.getElementById('chart-area').addEventListener('touchend', e => {
   }
 }, { passive:true });
 
-document.getElementById('btn-export').addEventListener('click', () => {
-  const tab = TABS[currentTab];
-  const cont = document.getElementById(tab.id).querySelector('.plotly-container');
-  if (cont && cont.querySelector('.plot-container')) {
-    Plotly.downloadImage(cont, { format: 'png', scale: 2, filename: `xvial_${tab.label.replace(/\s+/g,'_').toLowerCase()}` });
+/* ══════════════════════ COMPONENTES DE EXPORTACIÓN (EXCEL Y PDF) ══════════════════════ */
+
+// 1. CONTROLADOR DE DESCARGA EXCEL (Formato CSV compatible con UTF-8 para eñes y tildes)
+document.getElementById('btn-excel').addEventListener('click', () => {
+  let csvRows = [];
+  
+  // Encabezado general del reporte
+  csvRows.push('--- REPORTE DE EVALUACION VIAL DE PAVIMENTO (XVIAL) ---');
+  csvRows.push('Ubicacion;Av. Blanco Galindo - Cochabamba, Bolivia');
+  csvRows.push(`Total Vehiculos Contados (30 min);${MODEL.totalVeh}`);
+  csvRows.push(`ESAL Equivalente Acumulado;${MODEL.esalTotal.toFixed(2)}`);
+  csvRows.push(`Resultado de Prediccion;${MODEL.pred === 1 ? 'NECESITA REPARACION' : 'SIN REPARACION'}`);
+  csvRows.push(`Confianza de Clasificacion;${(MODEL.predConf * 100).toFixed(1)}%`);
+  csvRows.push('');
+
+  // Sección 1: Datos de Aforo Real
+  csvRows.push('--- DETALLE DE AFORO VEHICULAR ---');
+  csvRows.push('Tipo de Vehiculo;Cantidad Contada;Factor ESAL');
+  Object.keys(MODEL.aforo).forEach(k => {
+    csvRows.push(`${k};${MODEL.aforo[k]};${MODEL.esalFactors[k] || 0}`);
+  });
+  csvRows.push('');
+
+  // Sección 2: Dataset de Entrenamiento
+  csvRows.push('--- DATASET SINTETICO DE ENTRENAMIENTO (MUESTRAS) ---');
+  csvRows.push('Muestra;ESAL Equivalente;Antiguedad (Anos);Flujo Vehicular;Estatus Pavimento');
+  const d = MODEL.df;
+  for (let i = 0; i < Math.min(d.esal.length, 100); i++) {
+    csvRows.push(`${i+1};${d.esal[i].toFixed(2)};${d.ant[i].toFixed(1)};${d.flujo[i].toFixed(0)};${d.label[i] === 1 ? 'Defectuoso' : 'Optimo'}`);
   }
+
+  // Generar el archivo Blob con BOM para forzar el reconocimiento UTF-8 de Excel
+  const csvContent = '\uFEFF' + csvRows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `xvial_reporte_pavimento.csv`;
+  a.click();
+});
+
+// 2. CONTROLADOR DE DESCARGA PDF
+document.getElementById('btn-pdf').addEventListener('click', () => {
+  // Dispara el submenú de guardado nativo del dispositivo (PC o Celular)
+  window.print();
 });
 
 let resizeTimer;
@@ -1082,13 +1069,11 @@ window.addEventListener('resize', () => {
   }, 150);
 });
 
-/* ── Arranque: cargar datos servidor y luego iniciar ─────────── */
 async function loadServerData() {
   try {
     const r = await fetch('/data.json', { cache: 'no-store' });
     if (r.ok) {
       _serverData = await r.json();
-      // CORREGIDO: Reemplazado print() por console.info() para erradicar el bug de la impresora en Android
       console.info('[XVial] Datos reales del modelo Python cargados dinámicamente.');
     }
   } catch (_) {
